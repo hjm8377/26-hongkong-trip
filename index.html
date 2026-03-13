@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🇭🇰 홍콩 가족여행 2025</title>
+<title>🇭🇰 홍콩 가족여행 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #080810; color: #e0e0e0; font-family: 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif; min-height: 100vh; }
@@ -45,11 +46,18 @@
   .map-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px; background: rgba(78,205,196,0.1); border: 1px solid rgba(78,205,196,0.2); color: #4ECDC4; font-size: 11px; font-weight: 700; text-decoration: none; }
   .map-spot-list { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px; }
   .map-spot-list-title { font-size: 9px; color: #3a3a4a; letter-spacing: 0.08em; margin-bottom: 8px; }
-  .map-spot-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .map-spot-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; border-radius: 8px; transition: background 0.18s ease; }
+  .map-spot-item:hover { background: rgba(255,255,255,0.03); }
   .map-spot-item:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.04); }
   .map-spot-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
   .map-spot-name { font-size: 11px; color: #ccc; font-weight: 600; }
   .map-spot-time { font-size: 9px; color: #444; margin-top: 1px; }
+  .leaflet-container { background: #0b1220; font-family: inherit; }
+  .leaflet-control-attribution { background: rgba(8,8,16,0.78) !important; color: #8b93a7 !important; }
+  .leaflet-control-attribution a { color: #cfd8ea !important; }
+  .day-marker { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; border: 2px solid rgba(255,255,255,0.95); box-shadow: 0 8px 18px rgba(0,0,0,0.35); }
+  .day-marker.transport { background: #2a2a3a; color: #c7d2fe; }
+  .day-marker.spot { background: linear-gradient(135deg,#FF6B6B,#ff9f7f); }
 
   /* Timeline */
   .timeline { position: relative; }
@@ -178,6 +186,15 @@
   .conv-hkd { font-size: 13px; color: #ffd700; font-weight: 700; }
   .conv-krw { font-size: 13px; color: #e0e0e0; font-weight: 700; }
   .rate-loading { text-align: center; padding: 40px 20px; color: #333; font-size: 12px; }
+  .converter-card { margin-top: 8px; }
+  .converter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .converter-field { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; }
+  .converter-label { font-size: 10px; color: #666; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .converter-input { width: 100%; background: transparent; border: none; color: #fff; font-size: 24px; font-weight: 800; outline: none; font-family: inherit; }
+  .converter-input::-webkit-outer-spin-button,
+  .converter-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .converter-input[type=number] { -moz-appearance: textfield; }
+  .converter-meta { margin-top: 8px; font-size: 10px; color: #666; line-height: 1.5; }
 
   /* Route items */
   .route-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,0.05); }
@@ -210,12 +227,18 @@
   .expense-item-amount { font-size: 14px; font-weight: 800; color: #FFD93D; text-align: right; }
   .expense-item-delete { margin-top: 6px; border: none; background: transparent; color: #FF6B6B; font-size: 11px; cursor: pointer; font-family: inherit; }
   .empty-state { padding: 24px 16px; text-align: center; font-size: 12px; color: #666; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.08); border-radius: 12px; }
+  .expense-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  .expense-sync { font-size: 10px; color: #666; margin-top: 8px; line-height: 1.5; }
+  .expense-hint { font-size: 10px; color: #666; margin-top: 6px; line-height: 1.5; }
+  .admin-note { font-size: 11px; color: #999; line-height: 1.7; }
+  .admin-success { font-size: 11px; color: #4ECDC4; min-height: 16px; }
 
   .body { position: relative; z-index: 1; }
   @media (max-width: 520px) {
     .expense-grid { grid-template-columns: 1fr; }
     .expense-hero { flex-direction: column; }
     #map-container { height: 320px; }
+    .converter-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -226,7 +249,7 @@
       <div class="header-icon">🇭🇰</div>
       <div>
         <div class="header-title">홍콩 가족여행</div>
-        <div class="header-sub">MAY 01 – 05, 2025 · CX439 / CX410</div>
+        <div class="header-sub">MAY 01 – 05, 2026 · CX439 / CX410</div>
       </div>
     </div>
     <div class="tabs" id="tabs"></div>
@@ -234,6 +257,9 @@
 </div>
 <div class="body" id="body"></div>
 
+<script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 /* ─── 데이터 ─── */
 const days = [
@@ -319,11 +345,32 @@ let expandedRest = null;
 let clockTimer = null;
 let wxData = null;
 let rateData = null;
-const EXPENSE_PASSWORD = 'hongkong2025';
+const DEFAULT_EXPENSE_PASSWORD_HASH = '14d1a1c54be0666be5e970413eb4ebff503ba397442bfac938c4554ba1fdc2cd';
 const EXPENSE_STORAGE_KEY = 'hongkong-trip-expenses';
 const EXPENSE_AUTH_KEY = 'hongkong-trip-expense-auth';
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBVgElqHCZnyOhy3dtEkKgRhtssVATSgUE",
+  authDomain: "hongkong-trip-81ee2.firebaseapp.com",
+  projectId: "hongkong-trip-81ee2",
+  storageBucket: "hongkong-trip-81ee2.firebasestorage.app",
+  messagingSenderId: "881346225560",
+  appId: "1:881346225560:web:791ec65323d82f62a977ed",
+  measurementId: "G-SLZWQGPLGJ"
+};
+const FIREBASE_COLLECTION = 'trip_data';
+const FIREBASE_DOCUMENT = 'hongkong-trip';
 let expenseError = '';
 let touchStartX = null;
+let infoTabsScrollLeft = 0;
+let currencyDraft = { hkd: '', krw: '' };
+let firebaseDb = null;
+let remotePasswordHash = DEFAULT_EXPENSE_PASSWORD_HASH;
+let expenseSyncStatus = '이 기기에 저장';
+let expenseRemoteEnabled = false;
+let adminError = '';
+let adminSuccess = '';
+let dayMap = null;
+let dayMapMarkers = [];
 let expenseEntries = loadExpenses();
 let expenseUnlocked = localStorage.getItem(EXPENSE_AUTH_KEY) === 'true';
 
@@ -339,6 +386,160 @@ function loadExpenses() {
 
 function saveExpenses() {
   localStorage.setItem(EXPENSE_STORAGE_KEY, JSON.stringify(expenseEntries));
+}
+
+function getExpenseHkdAmount(item) {
+  if (Number.isFinite(Number(item.hkdAmount))) return Number(item.hkdAmount);
+  return Number(item.amount || 0);
+}
+
+function rememberInfoScroll() {
+  const wrap = document.querySelector('.info-subtabs-wrap');
+  if (wrap) infoTabsScrollLeft = wrap.scrollLeft;
+}
+
+function restoreInfoScroll() {
+  const wrap = document.querySelector('.info-subtabs-wrap');
+  if (!wrap) return;
+  wrap.scrollLeft = infoTabsScrollLeft;
+  wrap.addEventListener('scroll', () => {
+    infoTabsScrollLeft = wrap.scrollLeft;
+  }, { passive: true });
+}
+
+function hasFirebaseConfig() {
+  return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.appId);
+}
+
+async function sha256Hex(text) {
+  const bytes = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(hashBuffer)).map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function initExpenseRemote() {
+  if (!hasFirebaseConfig() || !window.firebase) return;
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDb = firebase.firestore();
+    expenseSyncStatus = 'Firebase 연결 중...';
+    expenseRemoteEnabled = true;
+    const snapshot = await firebaseDb.collection(FIREBASE_COLLECTION).doc(FIREBASE_DOCUMENT).get();
+    if (snapshot.exists) {
+      const data = snapshot.data() || {};
+      if (Array.isArray(data.entries)) {
+        expenseEntries = data.entries;
+        saveExpenses();
+      }
+      if (typeof data.passwordHash === 'string' && data.passwordHash.trim()) {
+        remotePasswordHash = data.passwordHash.trim();
+      }
+      expenseSyncStatus = `Firebase 동기화 사용 중 · ${new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+      await pushExpensesToRemote();
+      expenseSyncStatus = `Firebase 초기화 완료 · ${new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}`;
+    }
+  } catch (error) {
+    console.error(error);
+    firebaseDb = null;
+    expenseRemoteEnabled = false;
+    expenseSyncStatus = `Firebase 연결 실패 · ${error && error.message ? error.message : '로컬 저장 사용'}`;
+  }
+
+  if (activeTab === 'expense') renderExpense();
+}
+
+async function pushExpensesToRemote() {
+  if (!firebaseDb) return;
+  await firebaseDb.collection(FIREBASE_COLLECTION).doc(FIREBASE_DOCUMENT).set({
+    entries: expenseEntries,
+    passwordHash: remotePasswordHash || DEFAULT_EXPENSE_PASSWORD_HASH,
+    updatedAt: new Date().toISOString(),
+  }, { merge: true });
+  expenseSyncStatus = `Firebase 저장 완료 · ${new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function syncExpenses() {
+  saveExpenses();
+  if (firebaseDb) {
+    pushExpensesToRemote().catch((error) => {
+      console.error(error);
+      expenseSyncStatus = `Firebase 저장 실패 · ${error && error.message ? error.message : '로컬 저장 유지'}`;
+      if (activeTab === 'expense') renderExpense();
+    });
+  }
+}
+
+async function updateRemotePasswordHash(nextHash) {
+  remotePasswordHash = nextHash;
+  if (firebaseDb) {
+    await firebaseDb.collection(FIREBASE_COLLECTION).doc(FIREBASE_DOCUMENT).set({
+      passwordHash: nextHash,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    expenseSyncStatus = `Firebase 비밀번호 저장 완료 · ${new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}`;
+    return;
+  }
+  expenseSyncStatus = 'Firebase 미연결 · 이 기기 세션에만 반영';
+}
+
+function formatNumberInput(value, digits = 2) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '';
+  return num.toFixed(digits).replace(/\.00$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+}
+
+function updateCurrencyInputs(source, rawValue) {
+  const rateNum = rateData ? Number(rateData.krw) : null;
+  if (!rateNum) return;
+  if (rawValue === '') {
+    currencyDraft = { hkd: '', krw: '' };
+  } else {
+    const inputNum = Number(rawValue);
+    if (!Number.isFinite(inputNum)) return;
+    if (source === 'hkd') {
+      currencyDraft.hkd = rawValue;
+      currencyDraft.krw = formatNumberInput(inputNum * rateNum, 0);
+    } else {
+      currencyDraft.krw = rawValue;
+      currencyDraft.hkd = formatNumberInput(inputNum / rateNum, 2);
+    }
+  }
+
+  const hkdInput = document.getElementById('currency-hkd');
+  const krwInput = document.getElementById('currency-krw');
+  if (hkdInput) hkdInput.value = currencyDraft.hkd;
+  if (krwInput) krwInput.value = currencyDraft.krw;
+}
+
+function csvEscape(value) {
+  return `"${String(value ?? '').replace(/"/g, '""')}"`;
+}
+
+function exportExpensesCsv() {
+  const rateNum = rateData ? Number(rateData.krw) : null;
+  const rows = [
+    ['제목', '금액(HKD)', '금액(KRW)', '결제수단', '메모', '생성시각'],
+    ...expenseEntries.map((item) => [
+      item.title,
+      Number(item.amount).toFixed(2),
+      rateNum ? Math.round(Number(item.amount) * rateNum) : '',
+      item.payment === 'cash' ? '현금' : '카드',
+      item.memo || '',
+      item.createdAt,
+    ]),
+  ];
+  const csv = '\uFEFF' + rows.map((row) => row.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+  link.href = url;
+  link.download = `hongkong-expenses-${stamp}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 /* ─── 지도 ─── */
@@ -367,12 +568,75 @@ function getGoogleMapExternalUrl(dayIndex) {
   return `https://www.google.com/maps/dir/${query}`;
 }
 
+function destroyDayMap() {
+  dayMapMarkers = [];
+  if (dayMap) {
+    dayMap.remove();
+    dayMap = null;
+  }
+}
+
+function createMarkerIcon(label, isTransport) {
+  return L.divIcon({
+    className: '',
+    html: `<div class="day-marker ${isTransport ? 'transport' : 'spot'}">${label}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -14],
+  });
+}
+
+function initDayMap(dayIndex) {
+  const container = document.getElementById('map-container');
+  const config = getDayMapConfig(dayIndex);
+  if (!container || !config || !window.L) return;
+  destroyDayMap();
+
+  dayMap = L.map(container, {
+    zoomControl: true,
+    attributionControl: true,
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors',
+  }).addTo(dayMap);
+
+  const bounds = [];
+  let markerNumber = 1;
+  config.spots.forEach((spot, index) => {
+    const isTransport = spot.type === 'transport';
+    const label = markerNumber++;
+    const marker = L.marker([spot.lat, spot.lng], {
+      icon: createMarkerIcon(label, isTransport),
+      keyboard: true,
+    }).addTo(dayMap);
+    marker.bindPopup(`<strong>${spot.name}</strong><br>${spot.time}<br>${spot.sub}`);
+    dayMapMarkers[index] = marker;
+    bounds.push([spot.lat, spot.lng]);
+  });
+
+  if (bounds.length) {
+    dayMap.fitBounds(bounds, { padding: [28, 28], maxZoom: 15 });
+  }
+}
+
+function focusMapSpot(index) {
+  const marker = dayMapMarkers[index];
+  if (!dayMap || !marker) return;
+  const latLng = marker.getLatLng();
+  dayMap.flyTo(latLng, Math.max(dayMap.getZoom(), 14), { duration: 0.6 });
+  marker.openPopup();
+}
+
 /* ─── 렌더 루트 ─── */
 function render() {
   stopClock();
+  destroyDayMap();
   renderTabs();
   if (activeTab === 'info') { renderInfo(); return; }
   if (activeTab === 'expense') { renderExpense(); return; }
+  if (activeTab === 'admin') { renderAdmin(); return; }
   renderDay();
 }
 
@@ -394,6 +658,11 @@ function renderTabs() {
       style="${activeTab==='expense'?'color:#FF9F1C;border-bottom-color:#FF9F1C':''}" >
       <span class="tab-date" style="font-size:16px;">💳</span>
       <span class="tab-day">지출</span>
+    </button>
+    <button class="tab ${activeTab==='admin'?'active':''}" onclick="switchAdmin()"
+      style="${activeTab==='admin'?'color:#FF6B6B;border-bottom-color:#FF6B6B':''}" >
+      <span class="tab-date" style="font-size:16px;">🔐</span>
+      <span class="tab-day">관리</span>
     </button>
   `;
 }
@@ -424,16 +693,19 @@ function renderDay() {
       </div>
   `;
   if (activeView === 'map') {
-    html += `<div id="map-container"><iframe class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${getGoogleMapEmbedUrl(activeDay)}"></iframe></div>
+    html += `<div id="map-container" aria-label="오늘의 일정 지도"></div>
     <div class="map-actions"><a class="map-link" href="${getGoogleMapExternalUrl(activeDay)}" target="_blank" rel="noreferrer">Google Maps에서 열기 ↗</a></div>
     <div class="map-spot-list"><div class="map-spot-list-title">TODAY'S SPOTS</div>`;
     let n = 1;
-    day.spots.forEach(s => {
+    day.spots.forEach((s, index) => {
       if (!s.lat || !s.lng) return;
       const isT = s.type==='transport';
-      html += `<div class="map-spot-item">
-        <div class="map-spot-num" style="background:${isT?'rgba(255,255,255,0.05)':day.color+'22'};border:1px solid ${isT?'rgba(255,255,255,0.08)':day.color+'55'};color:${isT?'#444':day.color};">${isT?'→':n++}</div>
-        <div><div class="map-spot-name" style="color:${isT?'#555':'#ccc'};">${s.icon} ${s.name}</div><div class="map-spot-time">${s.time}</div></div>
+      html += `<div class="map-spot-item" onclick="focusMapSpot(${index})">
+        <div class="map-spot-num" style="background:${isT?'rgba(255,255,255,0.05)':day.color+'22'};border:1px solid ${isT?'rgba(255,255,255,0.08)':day.color+'55'};color:${isT?'#444':day.color};">${n++}</div>
+        <div>
+          <div class="map-spot-name" style="color:${isT?'#555':'#ccc'};">${s.icon} ${s.name}</div>
+          <div class="map-spot-time">${s.time}</div>
+        </div>
       </div>`;
     });
     html += `</div>`;
@@ -506,6 +778,7 @@ function renderDay() {
   }
   html += `</div>`;
   document.getElementById('body').innerHTML = html;
+  if (activeView === 'map') initDayMap(activeDay);
   bindScheduleSwipe();
 }
 
@@ -522,6 +795,7 @@ const infoTabs = [
 ];
 
 function renderInfo() {
+  rememberInfoScroll();
   const subtabHtml = `
     <div class="info-subtabs-wrap">
       <div class="info-subtabs">
@@ -544,6 +818,7 @@ function renderInfo() {
   else if (activeInfoTab === 'emergency') content = renderEmergency();
 
   document.getElementById('body').innerHTML = subtabHtml + content;
+  restoreInfoScroll();
 
   if (activeInfoTab === 'overview') startClock();
   if (activeInfoTab === 'weather' && !wxData) fetchWeather();
@@ -566,10 +841,10 @@ function renderExpense() {
     return;
   }
 
-  const total = expenseEntries.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const total = expenseEntries.reduce((sum, item) => sum + getExpenseHkdAmount(item), 0);
   const byPayment = {
-    cash: expenseEntries.filter(item => item.payment === 'cash').reduce((sum, item) => sum + Number(item.amount || 0), 0),
-    card: expenseEntries.filter(item => item.payment === 'card').reduce((sum, item) => sum + Number(item.amount || 0), 0),
+    cash: expenseEntries.filter(item => item.payment === 'cash').reduce((sum, item) => sum + getExpenseHkdAmount(item), 0),
+    card: expenseEntries.filter(item => item.payment === 'card').reduce((sum, item) => sum + getExpenseHkdAmount(item), 0),
   };
 
   document.getElementById('body').innerHTML = `
@@ -578,9 +853,13 @@ function renderExpense() {
         <div>
           <div class="info-card-header">💳 여행 지출</div>
           <div class="expense-total">HKD ${total.toLocaleString()}</div>
-          <div class="expense-total-sub">항목 ${expenseEntries.length}개 · 이 기기에 자동 저장</div>
+          <div class="expense-total-sub">항목 ${expenseEntries.length}개 · ${expenseRemoteEnabled ? 'Firebase와 동기화' : '이 기기에 자동 저장'}</div>
+          <div class="expense-sync">${expenseSyncStatus}</div>
         </div>
-        <button class="expense-btn secondary" type="button" onclick="lockExpense()">잠금</button>
+        <div class="expense-actions">
+          <button class="expense-btn secondary" type="button" onclick="exportExpensesCsv()">엑셀 내보내기</button>
+          <button class="expense-btn secondary" type="button" onclick="lockExpense()">잠금</button>
+        </div>
       </div>
       <div class="expense-grid">
         <div class="expense-stat">
@@ -598,7 +877,13 @@ function renderExpense() {
       </div>
       <form class="expense-form" onsubmit="addExpense(event)">
         <input class="expense-input" name="title" type="text" placeholder="예: 디즈니 점심">
-        <input class="expense-input" name="amount" type="number" min="0" step="0.01" placeholder="금액 (HKD)">
+        <div style="display:grid;grid-template-columns:1fr 120px;gap:8px;">
+          <input class="expense-input" name="amount" type="number" min="0" step="0.01" placeholder="금액">
+          <select class="expense-select" name="currency">
+            <option value="HKD">HKD</option>
+            <option value="KRW">KRW</option>
+          </select>
+        </div>
         <select class="expense-select" name="payment">
           <option value="card">카드</option>
           <option value="cash">현금</option>
@@ -612,20 +897,58 @@ function renderExpense() {
         <div class="expense-item">
           <div class="expense-item-left">
             <div class="expense-item-name">${item.title}</div>
-            <div class="expense-item-meta">${item.payment === 'cash' ? '현금' : '카드'} · ${item.memo || '메모 없음'} · ${item.createdAt}</div>
+            <div class="expense-item-meta">${item.payment === 'cash' ? '현금' : '카드'} · 원입력 ${item.currency || 'HKD'} ${Number(item.originalAmount ?? item.amount).toLocaleString()} · ${item.memo || '메모 없음'} · ${item.createdAt}</div>
           </div>
           <div>
-            <div class="expense-item-amount">HKD ${Number(item.amount).toLocaleString()}</div>
+            <div class="expense-item-amount">HKD ${getExpenseHkdAmount(item).toLocaleString()}</div>
             <button class="expense-item-delete" type="button" onclick="deleteExpense(${index})">삭제</button>
           </div>
         </div>`).join('') : `<div class="empty-state">아직 저장된 지출이 없습니다. 위에서 항목을 추가해보세요.</div>`}
     </div>`;
 }
 
+function renderAdmin() {
+  if (!expenseUnlocked) {
+    document.getElementById('body').innerHTML = `
+      <div class="expense-lock">
+        <div class="expense-lock-title">관리 페이지 잠금</div>
+        <div class="expense-lock-sub">먼저 지출 탭 비밀번호로 잠금을 해제해야 비밀번호를 변경할 수 있어요.</div>
+        <button class="expense-btn" type="button" onclick="switchExpense()">지출 탭으로 이동</button>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('body').innerHTML = `
+    <div class="info-card">
+      <div class="info-card-header">🔐 관리자 설정</div>
+      <div class="admin-note">
+        현재 비밀번호를 확인한 뒤 새 비밀번호의 SHA-256 해시를 Firebase에 저장합니다.<br>
+        이제 HTML 안에는 평문 비밀번호를 두지 않습니다.
+      </div>
+    </div>
+    <div class="info-card">
+      <form class="expense-form" onsubmit="changeExpensePassword(event)">
+        <input class="expense-input" name="currentPassword" type="password" placeholder="현재 비밀번호">
+        <input class="expense-input" name="nextPassword" type="password" placeholder="새 비밀번호">
+        <input class="expense-input" name="confirmPassword" type="password" placeholder="새 비밀번호 확인">
+        <button class="expense-btn" type="submit">비밀번호 변경</button>
+        <div class="expense-error">${adminError}</div>
+        <div class="admin-success">${adminSuccess}</div>
+      </form>
+    </div>
+    <div class="info-card">
+      <div class="info-card-header">보안 안내</div>
+      <div class="admin-note">
+        프런트엔드만으로는 개발자도구에서 모든 로직을 완전히 숨길 수 없습니다.<br>
+        지금은 평문 대신 해시만 저장하도록 바꿨고, 진짜 비밀값 보호는 서버나 Firebase Authentication이 있어야 가능합니다.
+      </div>
+    </div>`;
+}
+
 /* ── 개요 ── */
 function renderOverview() {
-  const dep = new Date('2025-05-01T13:40:00+09:00');
-  const ret = new Date('2025-05-05T14:10:00+09:00');
+  const dep = new Date('2026-05-01T13:40:00+09:00');
+  const ret = new Date('2026-05-05T14:10:00+09:00');
   const now = new Date();
   const msLeft = dep - now;
   let countdownHtml = '';
@@ -797,6 +1120,9 @@ function renderCurrency() {
   const convAmounts = [10, 50, 100, 200, 500, 1000];
   const rate = rateData ? rateData : null;
   const rateNum = rate ? rate.krw : null;
+  if (rateNum && !currencyDraft.hkd && !currencyDraft.krw) {
+    currencyDraft = { hkd: '100', krw: formatNumberInput(100 * rateNum, 0) };
+  }
 
   const heroHtml = rateNum
     ? `<div class="rate-hero">
@@ -820,6 +1146,21 @@ function renderCurrency() {
               <span class="conv-hkd">HKD ${a}</span>
               <span class="conv-krw">≈ ${Math.round(a*rateNum).toLocaleString()}원</span>
             </div>`).join('')}
+        </div>
+        <div class="info-card converter-card">
+          <div class="info-card-header">🔢 직접 계산</div>
+          <div class="converter-grid">
+            <label class="converter-field">
+              <div class="converter-label">HKD</div>
+              <input class="converter-input" id="currency-hkd" type="number" min="0" step="0.01" value="${currencyDraft.hkd}" oninput="updateCurrencyInputs('hkd', this.value)">
+              <div class="converter-meta">입력한 홍콩달러를 원화로 바로 계산합니다.</div>
+            </label>
+            <label class="converter-field">
+              <div class="converter-label">KRW</div>
+              <input class="converter-input" id="currency-krw" type="number" min="0" step="1" value="${currencyDraft.krw}" oninput="updateCurrencyInputs('krw', this.value)">
+              <div class="converter-meta">원화를 입력하면 필요한 홍콩달러를 역산합니다.</div>
+            </label>
+          </div>
         </div>
       </div>`
     : '';
@@ -1122,6 +1463,7 @@ function switchSchedule() {
   render();
 }
 function switchInfo() {
+  rememberInfoScroll();
   activeTab = 'info'; render();
 }
 function switchExpense() {
@@ -1129,8 +1471,14 @@ function switchExpense() {
   activeTab = 'expense';
   render();
 }
+function switchAdmin() {
+  stopClock();
+  activeTab = 'admin';
+  render();
+}
 function switchInfoTab(id) {
   stopClock();
+  rememberInfoScroll();
   activeInfoTab = id; renderInfo();
 }
 function switchView(view) {
@@ -1168,11 +1516,12 @@ function bindScheduleSwipe() {
   }, { passive: true });
 }
 
-function unlockExpense(event) {
+async function unlockExpense(event) {
   event.preventDefault();
   const input = document.getElementById('expense-password');
   if (!input) return;
-  if (input.value === EXPENSE_PASSWORD) {
+  const inputHash = await sha256Hex(input.value);
+  if (inputHash === remotePasswordHash) {
     expenseUnlocked = true;
     expenseError = '';
     localStorage.setItem(EXPENSE_AUTH_KEY, 'true');
@@ -1195,26 +1544,85 @@ function addExpense(event) {
   const form = event.target;
   const title = form.title.value.trim();
   const amount = Number(form.amount.value);
+  const currency = form.currency.value;
   const memo = form.memo.value.trim();
   if (!title || !amount) return;
+  let hkdAmount = amount;
+  if (currency === 'KRW') {
+    const rateNum = rateData ? Number(rateData.krw) : null;
+    if (!rateNum) {
+      expenseSyncStatus = 'KRW 입력에는 먼저 환율을 불러와야 합니다.';
+      renderExpense();
+      return;
+    }
+    hkdAmount = Number((amount / rateNum).toFixed(2));
+  }
   expenseEntries.unshift({
     title,
-    amount,
+    amount: hkdAmount,
+    hkdAmount,
+    originalAmount: amount,
+    currency,
     payment: form.payment.value,
     memo,
     createdAt: new Date().toLocaleString('ko-KR', { hour12: false }),
   });
-  saveExpenses();
+  syncExpenses();
   renderExpense();
 }
 
 function deleteExpense(index) {
   expenseEntries.splice(index, 1);
-  saveExpenses();
+  syncExpenses();
   renderExpense();
 }
 
+async function changeExpensePassword(event) {
+  event.preventDefault();
+  adminError = '';
+  adminSuccess = '';
+  const form = event.target;
+  const currentPassword = form.currentPassword.value;
+  const nextPassword = form.nextPassword.value;
+  const confirmPassword = form.confirmPassword.value;
+
+  if (!currentPassword || !nextPassword || !confirmPassword) {
+    adminError = '모든 항목을 입력해주세요.';
+    renderAdmin();
+    return;
+  }
+  if (nextPassword !== confirmPassword) {
+    adminError = '새 비밀번호 확인이 일치하지 않습니다.';
+    renderAdmin();
+    return;
+  }
+  if (nextPassword.length < 4) {
+    adminError = '비밀번호는 4자 이상으로 입력해주세요.';
+    renderAdmin();
+    return;
+  }
+
+  const currentHash = await sha256Hex(currentPassword);
+  if (currentHash !== remotePasswordHash) {
+    adminError = '현재 비밀번호가 맞지 않습니다.';
+    renderAdmin();
+    return;
+  }
+
+  const nextHash = await sha256Hex(nextPassword);
+  try {
+    await updateRemotePasswordHash(nextHash);
+    adminSuccess = '비밀번호를 변경했습니다.';
+    renderAdmin();
+  } catch (error) {
+    console.error(error);
+    adminError = `비밀번호 저장 실패: ${error && error.message ? error.message : '알 수 없는 오류'}`;
+    renderAdmin();
+  }
+}
+
 render();
+initExpenseRemote();
 </script>
 </body>
 </html>
