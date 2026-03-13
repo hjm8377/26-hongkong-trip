@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🇭🇰 홍콩 가족여행 2025</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #080810; color: #e0e0e0; font-family: 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif; min-height: 100vh; }
@@ -33,12 +32,17 @@
   .view-btn.active { background: rgba(255,255,255,0.1); color: #fff; }
 
   /* Map */
-  #map-container { height: 400px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px; }
-  .leaflet-popup-content-wrapper { background: #1a1a2e !important; color: #e0e0e0 !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 8px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important; }
-  .leaflet-popup-tip { background: #1a1a2e !important; }
-  .leaflet-popup-content { font-size: 12px !important; color: #ccc !important; line-height: 1.5 !important; }
-  .leaflet-popup-content b { color: #fff; font-size: 13px; }
-  .leaflet-container { background: #0d0d1a !important; }
+  .schedule-shell { touch-action: pan-y; }
+  .schedule-pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; }
+  .schedule-nav { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #ddd; font-size: 16px; cursor: pointer; font-family: inherit; }
+  .schedule-nav:disabled { opacity: 0.35; cursor: default; }
+  .schedule-summary { flex: 1; text-align: center; }
+  .schedule-summary .main { font-size: 13px; font-weight: 800; color: #fff; }
+  .schedule-summary .sub { font-size: 10px; color: #666; margin-top: 3px; }
+  #map-container { height: 400px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px; background: rgba(255,255,255,0.02); }
+  .map-frame { width: 100%; height: 100%; border: 0; filter: grayscale(0.08) contrast(1.02); }
+  .map-actions { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+  .map-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px; background: rgba(78,205,196,0.1); border: 1px solid rgba(78,205,196,0.2); color: #4ECDC4; font-size: 11px; font-weight: 700; text-decoration: none; }
   .map-spot-list { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px; }
   .map-spot-list-title { font-size: 9px; color: #3a3a4a; letter-spacing: 0.08em; margin-bottom: 8px; }
   .map-spot-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
@@ -182,24 +186,40 @@
   .route-time { font-size: 12px; font-weight: 700; color: #fff; }
   .route-fare { font-size: 9px; color: #555; margin-top: 1px; }
 
-  .cityscape { position: fixed; bottom: 0; left: 0; right: 0; height: 180px; pointer-events: none; z-index: 0; opacity: 0.05; }
+  .expense-lock { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 20px; }
+  .expense-lock-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .expense-lock-sub { font-size: 12px; color: #888; line-height: 1.6; margin-bottom: 14px; }
+  .expense-form { display: flex; flex-direction: column; gap: 10px; }
+  .expense-input, .expense-select { width: 100%; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; border-radius: 10px; padding: 12px 14px; font-size: 13px; font-family: inherit; }
+  .expense-input::placeholder { color: #666; }
+  .expense-btn { border: none; border-radius: 10px; padding: 12px 14px; background: linear-gradient(135deg,#FFD93D,#FF9F1C); color: #111; font-size: 13px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .expense-btn.secondary { background: rgba(255,255,255,0.05); color: #ddd; border: 1px solid rgba(255,255,255,0.08); }
+  .expense-error { font-size: 11px; color: #FF6B6B; min-height: 16px; }
+  .expense-hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+  .expense-total { font-size: 28px; font-weight: 900; color: #FFD93D; line-height: 1; margin-top: 6px; }
+  .expense-total-sub { font-size: 11px; color: #666; margin-top: 4px; }
+  .expense-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+  .expense-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px; text-align: center; }
+  .expense-stat-label { font-size: 10px; color: #666; margin-bottom: 4px; }
+  .expense-stat-value { font-size: 15px; font-weight: 800; color: #fff; }
+  .expense-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .expense-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; }
+  .expense-item-left { min-width: 0; }
+  .expense-item-name { font-size: 13px; font-weight: 700; color: #fff; }
+  .expense-item-meta { font-size: 10px; color: #666; margin-top: 4px; }
+  .expense-item-amount { font-size: 14px; font-weight: 800; color: #FFD93D; text-align: right; }
+  .expense-item-delete { margin-top: 6px; border: none; background: transparent; color: #FF6B6B; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .empty-state { padding: 24px 16px; text-align: center; font-size: 12px; color: #666; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.08); border-radius: 12px; }
+
   .body { position: relative; z-index: 1; }
+  @media (max-width: 520px) {
+    .expense-grid { grid-template-columns: 1fr; }
+    .expense-hero { flex-direction: column; }
+    #map-container { height: 320px; }
+  }
 </style>
 </head>
 <body>
-<svg class="cityscape" viewBox="0 0 800 180" preserveAspectRatio="xMidYMax slice">
-  <rect x="0" y="150" width="28" height="30" fill="#fff"/><rect x="42" y="120" width="28" height="60" fill="#fff"/>
-  <rect x="84" y="140" width="28" height="40" fill="#fff"/><rect x="126" y="90" width="28" height="90" fill="#fff"/>
-  <rect x="168" y="130" width="28" height="50" fill="#fff"/><rect x="210" y="110" width="28" height="70" fill="#fff"/>
-  <rect x="252" y="135" width="28" height="45" fill="#fff"/><rect x="294" y="100" width="28" height="80" fill="#fff"/>
-  <rect x="336" y="145" width="28" height="35" fill="#fff"/><rect x="378" y="115" width="28" height="65" fill="#fff"/>
-  <rect x="420" y="125" width="28" height="55" fill="#fff"/><rect x="462" y="105" width="28" height="75" fill="#fff"/>
-  <rect x="504" y="138" width="28" height="42" fill="#fff"/><rect x="546" y="92" width="28" height="88" fill="#fff"/>
-  <rect x="588" y="128" width="28" height="52" fill="#fff"/><rect x="630" y="112" width="28" height="68" fill="#fff"/>
-  <rect x="672" y="142" width="28" height="38" fill="#fff"/><rect x="714" y="85" width="28" height="95" fill="#fff"/>
-  <rect x="756" y="132" width="28" height="48" fill="#fff"/>
-</svg>
-
 <div class="header">
   <div class="header-inner">
     <div class="header-top">
@@ -214,7 +234,6 @@
 </div>
 <div class="body" id="body"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* ─── 데이터 ─── */
 const days = [
@@ -293,50 +312,59 @@ const days = [
 /* ─── 상태 ─── */
 let activeDay = 0;
 let activeView = 'schedule';
-let activeTab = 'day';
+let activeTab = 'schedule';
 let activeInfoTab = 'overview';
 let expandedSpot = null;
 let expandedRest = null;
-let leafletMap = null;
 let clockTimer = null;
 let wxData = null;
 let rateData = null;
+const EXPENSE_PASSWORD = 'hongkong2025';
+const EXPENSE_STORAGE_KEY = 'hongkong-trip-expenses';
+const EXPENSE_AUTH_KEY = 'hongkong-trip-expense-auth';
+let expenseError = '';
+let touchStartX = null;
+let expenseEntries = loadExpenses();
+let expenseUnlocked = localStorage.getItem(EXPENSE_AUTH_KEY) === 'true';
+
+function loadExpenses() {
+  try {
+    const raw = localStorage.getItem(EXPENSE_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveExpenses() {
+  localStorage.setItem(EXPENSE_STORAGE_KEY, JSON.stringify(expenseEntries));
+}
 
 /* ─── 지도 ─── */
-function initMap(dayIndex) {
-  const day = days[dayIndex];
-  const mapEl = document.getElementById('map-container');
-  if (!mapEl) return;
-  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
-  const spotsWithCoords = day.spots.filter(s => s.lat && s.lng);
-  if (!spotsWithCoords.length) return;
-  leafletMap = L.map('map-container', { zoomControl: true });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org" style="color:#4ECDC4;">OpenStreetMap</a>',
-    maxZoom: 18,
-  }).addTo(leafletMap);
-  let num = 1;
-  spotsWithCoords.forEach(spot => {
-    const isT = spot.type === 'transport';
-    const bg = isT ? '#1e1e2e' : day.color;
-    const bc = isT ? '#333' : day.color;
-    const tc = isT ? '#555' : '#000';
-    const sz = isT ? 16 : 26;
-    const lbl = isT ? '→' : String(num++);
-    const sh = isT ? '' : `box-shadow:0 0 10px ${day.color}88,0 2px 8px rgba(0,0,0,0.5);`;
-    const icon = L.divIcon({
-      html: `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${bg};border:2px solid ${bc};display:flex;align-items:center;justify-content:center;font-size:${isT?9:11}px;font-weight:700;color:${tc};${sh}font-family:inherit;">${lbl}</div>`,
-      className: '', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2], popupAnchor:[0,-sz/2-2],
-    });
-    L.marker([spot.lat, spot.lng], {icon})
-      .bindPopup(`<b>${spot.icon} ${spot.name}</b><br><span style="color:#888;font-size:10px;">${spot.time} · ${spot.sub}</span>`)
-      .addTo(leafletMap);
-  });
-  if (spotsWithCoords.length === 1) {
-    leafletMap.setView([spotsWithCoords[0].lat, spotsWithCoords[0].lng], 14);
-  } else {
-    leafletMap.fitBounds(L.latLngBounds(spotsWithCoords.map(s=>[s.lat,s.lng])), {padding:[44,44]});
-  }
+function getDayMapConfig(dayIndex) {
+  const spots = days[dayIndex].spots.filter(s => s.lat && s.lng);
+  if (!spots.length) return null;
+  const latCenter = spots.reduce((sum, spot) => sum + spot.lat, 0) / spots.length;
+  const lngCenter = spots.reduce((sum, spot) => sum + spot.lng, 0) / spots.length;
+  const latSpan = Math.max(...spots.map(spot => spot.lat)) - Math.min(...spots.map(spot => spot.lat));
+  const lngSpan = Math.max(...spots.map(spot => spot.lng)) - Math.min(...spots.map(spot => spot.lng));
+  const spread = Math.max(latSpan, lngSpan);
+  const zoom = spread > 0.2 ? 10 : spread > 0.1 ? 11 : spread > 0.05 ? 12 : 13;
+  return { latCenter, lngCenter, zoom, spots };
+}
+
+function getGoogleMapEmbedUrl(dayIndex) {
+  const config = getDayMapConfig(dayIndex);
+  if (!config) return '';
+  return `https://www.google.com/maps?q=${config.latCenter},${config.lngCenter}&z=${config.zoom}&output=embed`;
+}
+
+function getGoogleMapExternalUrl(dayIndex) {
+  const config = getDayMapConfig(dayIndex);
+  if (!config) return 'https://maps.google.com';
+  const query = config.spots.map(spot => `${spot.lat},${spot.lng}`).join('/');
+  return `https://www.google.com/maps/dir/${query}`;
 }
 
 /* ─── 렌더 루트 ─── */
@@ -344,23 +372,28 @@ function render() {
   stopClock();
   renderTabs();
   if (activeTab === 'info') { renderInfo(); return; }
+  if (activeTab === 'expense') { renderExpense(); return; }
   renderDay();
 }
 
 /* ─── 탭 헤더 ─── */
 function renderTabs() {
   document.getElementById('tabs').innerHTML =
-    days.map((d,i) => `
-      <button class="tab ${activeTab==='day' && i===activeDay?'active':''}" onclick="switchDay(${i})"
-        style="${activeTab==='day'&&i===activeDay?`color:${d.color};border-bottom-color:${d.color}`:''}" >
-        <span class="tab-date">${d.date}</span>
-        <span class="tab-day">${d.day}</span>
-      </button>
-    `).join('') + `
+    `
+    <button class="tab ${activeTab==='schedule'?'active':''}" onclick="switchSchedule()"
+      style="${activeTab==='schedule'?'color:#FFD93D;border-bottom-color:#FFD93D':''}" >
+      <span class="tab-date" style="font-size:16px;">📋</span>
+      <span class="tab-day">일정</span>
+    </button>
     <button class="tab ${activeTab==='info'?'active':''}" onclick="switchInfo()"
       style="${activeTab==='info'?'color:#4ECDC4;border-bottom-color:#4ECDC4':''}" >
       <span class="tab-date" style="font-size:16px;">ℹ️</span>
       <span class="tab-day">정보</span>
+    </button>
+    <button class="tab ${activeTab==='expense'?'active':''}" onclick="switchExpense()"
+      style="${activeTab==='expense'?'color:#FF9F1C;border-bottom-color:#FF9F1C':''}" >
+      <span class="tab-date" style="font-size:16px;">💳</span>
+      <span class="tab-day">지출</span>
     </button>
   `;
 }
@@ -369,20 +402,31 @@ function renderTabs() {
 function renderDay() {
   const day = days[activeDay];
   let html = `
-    <div class="day-hero" style="background:linear-gradient(135deg,${day.color}12,${day.color}06);border:1px solid ${day.color}22;">
-      <div class="day-bar" style="background:${day.color};box-shadow:0 0 14px ${day.color};"></div>
-      <div>
-        <div class="day-date">${day.date} <span>(${day.day})</span></div>
-        <div class="day-label" style="color:${day.color};">${day.label}</div>
+    <div class="schedule-shell" id="schedule-shell">
+      <div class="schedule-pager">
+        <button class="schedule-nav" onclick="prevDay()" ${activeDay===0?'disabled':''}>‹</button>
+        <div class="schedule-summary">
+          <div class="main">5/1 ~ 5/5 일정</div>
+          <div class="sub">좌우로 스와이프해서 날짜 이동</div>
+        </div>
+        <button class="schedule-nav" onclick="nextDay()" ${activeDay===days.length-1?'disabled':''}>›</button>
       </div>
-    </div>
-    <div class="view-toggle">
-      <button class="view-btn ${activeView==='schedule'?'active':''}" onclick="switchView('schedule')">📋 일정</button>
-      <button class="view-btn ${activeView==='map'?'active':''}" onclick="switchView('map')">🗺 지도</button>
-    </div>
+      <div class="day-hero" style="background:linear-gradient(135deg,${day.color}12,${day.color}06);border:1px solid ${day.color}22;">
+        <div class="day-bar" style="background:${day.color};box-shadow:0 0 14px ${day.color};"></div>
+        <div>
+          <div class="day-date">${day.date} <span>(${day.day})</span></div>
+          <div class="day-label" style="color:${day.color};">${day.label}</div>
+        </div>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn ${activeView==='schedule'?'active':''}" onclick="switchView('schedule')">📋 일정</button>
+        <button class="view-btn ${activeView==='map'?'active':''}" onclick="switchView('map')">🗺 지도</button>
+      </div>
   `;
   if (activeView === 'map') {
-    html += `<div id="map-container"></div><div class="map-spot-list"><div class="map-spot-list-title">TODAY'S SPOTS</div>`;
+    html += `<div id="map-container"><iframe class="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${getGoogleMapEmbedUrl(activeDay)}"></iframe></div>
+    <div class="map-actions"><a class="map-link" href="${getGoogleMapExternalUrl(activeDay)}" target="_blank" rel="noreferrer">Google Maps에서 열기 ↗</a></div>
+    <div class="map-spot-list"><div class="map-spot-list-title">TODAY'S SPOTS</div>`;
     let n = 1;
     day.spots.forEach(s => {
       if (!s.lat || !s.lng) return;
@@ -460,8 +504,9 @@ function renderDay() {
         <span class="legend-item">💰💰💰💰 400+</span>
       </div>`;
   }
+  html += `</div>`;
   document.getElementById('body').innerHTML = html;
-  if (activeView === 'map') setTimeout(() => initMap(activeDay), 50);
+  bindScheduleSwipe();
 }
 
 /* ─── 정보 탭 ─── */
@@ -503,6 +548,78 @@ function renderInfo() {
   if (activeInfoTab === 'overview') startClock();
   if (activeInfoTab === 'weather' && !wxData) fetchWeather();
   if (activeInfoTab === 'currency' && !rateData) fetchRate();
+}
+
+/* ─── 지출 탭 ─── */
+function renderExpense() {
+  if (!expenseUnlocked) {
+    document.getElementById('body').innerHTML = `
+      <div class="expense-lock">
+        <div class="expense-lock-title">지출 탭 잠금</div>
+        <div class="expense-lock-sub">비밀번호를 입력해야 접근할 수 있습니다. 로그인 후에는 이 기기에서 계속 수정할 수 있어요.</div>
+        <form class="expense-form" onsubmit="unlockExpense(event)">
+          <input class="expense-input" id="expense-password" type="password" placeholder="비밀번호 입력">
+          <button class="expense-btn" type="submit">지출 탭 열기</button>
+          <div class="expense-error">${expenseError}</div>
+        </form>
+      </div>`;
+    return;
+  }
+
+  const total = expenseEntries.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const byPayment = {
+    cash: expenseEntries.filter(item => item.payment === 'cash').reduce((sum, item) => sum + Number(item.amount || 0), 0),
+    card: expenseEntries.filter(item => item.payment === 'card').reduce((sum, item) => sum + Number(item.amount || 0), 0),
+  };
+
+  document.getElementById('body').innerHTML = `
+    <div class="info-card">
+      <div class="expense-hero">
+        <div>
+          <div class="info-card-header">💳 여행 지출</div>
+          <div class="expense-total">HKD ${total.toLocaleString()}</div>
+          <div class="expense-total-sub">항목 ${expenseEntries.length}개 · 이 기기에 자동 저장</div>
+        </div>
+        <button class="expense-btn secondary" type="button" onclick="lockExpense()">잠금</button>
+      </div>
+      <div class="expense-grid">
+        <div class="expense-stat">
+          <div class="expense-stat-label">현금</div>
+          <div class="expense-stat-value">HKD ${byPayment.cash.toLocaleString()}</div>
+        </div>
+        <div class="expense-stat">
+          <div class="expense-stat-label">카드</div>
+          <div class="expense-stat-value">HKD ${byPayment.card.toLocaleString()}</div>
+        </div>
+        <div class="expense-stat">
+          <div class="expense-stat-label">원화 환산</div>
+          <div class="expense-stat-value">₩${Math.round(total * (rateData ? rateData.krw : 178)).toLocaleString()}</div>
+        </div>
+      </div>
+      <form class="expense-form" onsubmit="addExpense(event)">
+        <input class="expense-input" name="title" type="text" placeholder="예: 디즈니 점심">
+        <input class="expense-input" name="amount" type="number" min="0" step="0.01" placeholder="금액 (HKD)">
+        <select class="expense-select" name="payment">
+          <option value="card">카드</option>
+          <option value="cash">현금</option>
+        </select>
+        <input class="expense-input" name="memo" type="text" placeholder="메모 (선택)">
+        <button class="expense-btn" type="submit">지출 추가</button>
+      </form>
+    </div>
+    <div class="expense-list">
+      ${expenseEntries.length ? expenseEntries.map((item, index) => `
+        <div class="expense-item">
+          <div class="expense-item-left">
+            <div class="expense-item-name">${item.title}</div>
+            <div class="expense-item-meta">${item.payment === 'cash' ? '현금' : '카드'} · ${item.memo || '메모 없음'} · ${item.createdAt}</div>
+          </div>
+          <div>
+            <div class="expense-item-amount">HKD ${Number(item.amount).toLocaleString()}</div>
+            <button class="expense-item-delete" type="button" onclick="deleteExpense(${index})">삭제</button>
+          </div>
+        </div>`).join('') : `<div class="empty-state">아직 저장된 지출이 없습니다. 위에서 항목을 추가해보세요.</div>`}
+    </div>`;
 }
 
 /* ── 개요 ── */
@@ -995,14 +1112,22 @@ function fetchRate() {
 /* ─── 스위치 함수들 ─── */
 function switchDay(i) {
   stopClock();
-  activeDay = i; activeTab = 'day'; activeView = 'schedule';
+  activeDay = i; activeTab = 'schedule';
   expandedSpot = null; expandedRest = null;
-  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  render();
+}
+function switchSchedule() {
+  stopClock();
+  activeTab = 'schedule';
   render();
 }
 function switchInfo() {
-  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
   activeTab = 'info'; render();
+}
+function switchExpense() {
+  stopClock();
+  activeTab = 'expense';
+  render();
 }
 function switchInfoTab(id) {
   stopClock();
@@ -1010,8 +1135,13 @@ function switchInfoTab(id) {
 }
 function switchView(view) {
   activeView = view; expandedSpot = null; expandedRest = null;
-  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
   render();
+}
+function prevDay() {
+  if (activeDay > 0) switchDay(activeDay - 1);
+}
+function nextDay() {
+  if (activeDay < days.length - 1) switchDay(activeDay + 1);
 }
 function toggleSpot(si) {
   expandedSpot = expandedSpot===si ? null : si;
@@ -1020,6 +1150,68 @@ function toggleSpot(si) {
 function toggleRest(key) {
   expandedRest = expandedRest===key ? null : key;
   render();
+}
+
+function bindScheduleSwipe() {
+  const el = document.getElementById('schedule-shell');
+  if (!el) return;
+  el.addEventListener('touchstart', (event) => {
+    touchStartX = event.changedTouches[0].clientX;
+  }, { passive: true });
+  el.addEventListener('touchend', (event) => {
+    if (touchStartX === null) return;
+    const delta = event.changedTouches[0].clientX - touchStartX;
+    touchStartX = null;
+    if (Math.abs(delta) < 50) return;
+    if (delta < 0) nextDay();
+    else prevDay();
+  }, { passive: true });
+}
+
+function unlockExpense(event) {
+  event.preventDefault();
+  const input = document.getElementById('expense-password');
+  if (!input) return;
+  if (input.value === EXPENSE_PASSWORD) {
+    expenseUnlocked = true;
+    expenseError = '';
+    localStorage.setItem(EXPENSE_AUTH_KEY, 'true');
+    renderExpense();
+    return;
+  }
+  expenseError = '비밀번호가 맞지 않습니다.';
+  renderExpense();
+}
+
+function lockExpense() {
+  expenseUnlocked = false;
+  expenseError = '';
+  localStorage.removeItem(EXPENSE_AUTH_KEY);
+  renderExpense();
+}
+
+function addExpense(event) {
+  event.preventDefault();
+  const form = event.target;
+  const title = form.title.value.trim();
+  const amount = Number(form.amount.value);
+  const memo = form.memo.value.trim();
+  if (!title || !amount) return;
+  expenseEntries.unshift({
+    title,
+    amount,
+    payment: form.payment.value,
+    memo,
+    createdAt: new Date().toLocaleString('ko-KR', { hour12: false }),
+  });
+  saveExpenses();
+  renderExpense();
+}
+
+function deleteExpense(index) {
+  expenseEntries.splice(index, 1);
+  saveExpenses();
+  renderExpense();
 }
 
 render();
