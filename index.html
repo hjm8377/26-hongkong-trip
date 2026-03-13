@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🇭🇰 홍콩 가족여행 2025</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080810; color: #e0e0e0; font-family: 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif; min-height: 100vh; }
+  .header { position: sticky; top: 0; z-index: 50; background: rgba(8,8,16,0.97); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .header-inner { max-width: 640px; margin: 0 auto; padding: 16px 16px 0; }
+  .header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .header-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg,#FF6B6B,#C77DFF); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .header-title { font-size: 16px; font-weight: 800; color: #fff; }
+  .header-sub { font-size: 10px; color: #555; letter-spacing: 0.1em; margin-top: 2px; }
+  .tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; padding: 7px 14px 10px; border: none; cursor: pointer; background: transparent; border-bottom: 2.5px solid transparent; color: #444; font-weight: 400; font-size: 12px; transition: all 0.18s; text-align: center; border-radius: 6px 6px 0 0; font-family: inherit; white-space: nowrap; }
+  .tab.active { font-weight: 700; }
+  .tab-date { font-size: 15px; display: block; }
+  .tab-day { font-size: 9px; opacity: 0.75; margin-top: 1px; display: block; }
+  .body { position: relative; max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* Day hero */
+  .day-hero { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 16px; border-radius: 14px; }
+  .day-bar { width: 3px; height: 44px; border-radius: 2px; flex-shrink: 0; }
+  .day-date { font-size: 22px; font-weight: 900; color: #fff; line-height: 1.1; }
+  .day-date span { color: #555; font-weight: 400; font-size: 16px; }
+  .day-label { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; margin-top: 3px; }
+  .view-toggle { display: flex; gap: 3px; margin-bottom: 18px; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 3px; }
+  .view-btn { flex: 1; padding: 7px; border: none; cursor: pointer; background: transparent; color: #555; font-size: 12px; font-weight: 600; border-radius: 6px; transition: all 0.18s; font-family: inherit; }
+  .view-btn.active { background: rgba(255,255,255,0.1); color: #fff; }
+
+  /* Map */
+  #map-container { height: 400px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px; }
+  .leaflet-popup-content-wrapper { background: #1a1a2e !important; color: #e0e0e0 !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 8px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important; }
+  .leaflet-popup-tip { background: #1a1a2e !important; }
+  .leaflet-popup-content { font-size: 12px !important; color: #ccc !important; line-height: 1.5 !important; }
+  .leaflet-popup-content b { color: #fff; font-size: 13px; }
+  .leaflet-container { background: #0d0d1a !important; }
+  .map-spot-list { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px; }
+  .map-spot-list-title { font-size: 9px; color: #3a3a4a; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .map-spot-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .map-spot-item:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .map-spot-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .map-spot-name { font-size: 11px; color: #ccc; font-weight: 600; }
+  .map-spot-time { font-size: 9px; color: #444; margin-top: 1px; }
+
+  /* Timeline */
+  .timeline { position: relative; }
+  .timeline-line { position: absolute; left: 20px; top: 8px; bottom: 8px; width: 1px; }
+  .spot-wrap { position: relative; padding-left: 48px; margin-bottom: 18px; }
+  .spot-dot { position: absolute; left: 13px; top: 10px; width: 14px; height: 14px; border-radius: 50%; background: #080810; border: 2px solid; z-index: 2; }
+  .spot-time { font-size: 9px; color: #444; margin-bottom: 4px; letter-spacing: 0.08em; }
+  .spot-card { border-radius: 11px; padding: 11px 13px; cursor: pointer; transition: background 0.15s; border: 1px solid; }
+  .spot-card:not(.transport) { background: rgba(255,255,255,0.04); }
+  .spot-card.transport { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.04) !important; cursor: default; }
+  .spot-inner { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .spot-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .spot-emoji { font-size: 20px; flex-shrink: 0; }
+  .spot-name { font-weight: 700; font-size: 13px; color: #efefef; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spot-name.transport { color: #666; }
+  .spot-sub { font-size: 10px; color: #484858; margin-top: 2px; line-height: 1.4; }
+  .rest-badge { border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; border: 1px solid; }
+  .toggle-arrow { font-size: 9px; color: #444; }
+  .rests { margin-top: 6px; padding-left: 2px; display: flex; flex-direction: column; gap: 5px; }
+  .rest-card { border-radius: 9px; padding: 9px 11px; cursor: pointer; transition: all 0.15s; border: 1px solid; }
+  .rest-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .rest-name { font-weight: 700; font-size: 12px; color: #e8e8e8; }
+  .rest-cn { font-size: 10px; color: #444; font-weight: 400; margin-left: 4px; }
+  .rest-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .rest-menu { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 700; }
+  .rest-price { font-size: 11px; }
+  .rest-detail { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .rest-desc { font-size: 11px; color: #aaa; line-height: 1.65; margin-bottom: 8px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .tag { font-size: 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 4px; padding: 2px 6px; color: #888; }
+  .tip-box { background: rgba(255,213,0,0.06); border: 1px solid rgba(255,213,0,0.16); border-radius: 6px; padding: 6px 10px; display: flex; gap: 6px; align-items: flex-start; }
+  .tip-text { font-size: 10px; color: #ffd700; line-height: 1.5; }
+  .legend { margin-top: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  .legend-title { font-size: 9px; color: #3a3a4a; letter-spacing: 0.08em; }
+  .legend-item { font-size: 10px; color: #505060; }
+
+  /* ── INFO 서브탭 ── */
+  .info-subtabs-wrap { overflow-x: auto; scrollbar-width: none; margin-bottom: 20px; }
+  .info-subtabs-wrap::-webkit-scrollbar { display: none; }
+  .info-subtabs { display: flex; gap: 4px; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 4px; border: 1px solid rgba(255,255,255,0.06); min-width: max-content; }
+  .ist { flex: 0 0 auto; padding: 8px 12px; border: none; cursor: pointer; background: transparent; color: #505060; font-size: 11px; font-weight: 600; border-radius: 8px; transition: all 0.2s; font-family: inherit; white-space: nowrap; display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1px solid transparent; }
+  .ist .si { font-size: 18px; }
+  .ist .sl { font-size: 9px; }
+  .ist.active { background: rgba(78,205,196,0.12); color: #4ECDC4; border-color: rgba(78,205,196,0.25); }
+
+  /* Info Common */
+  .info-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 14px; margin-bottom: 8px; }
+  .info-card-header { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+  .sec-label { font-size: 10px; font-weight: 700; color: #4ECDC4; letter-spacing: 0.12em; margin-bottom: 10px; margin-top: 20px; }
+  .sec-label:first-child { margin-top: 0; }
+  .info-steps { display: flex; flex-direction: column; gap: 8px; }
+  .info-step { display: flex; gap: 10px; align-items: flex-start; }
+  .isn { width: 22px; height: 22px; border-radius: 50%; background: rgba(78,205,196,0.15); border: 1px solid rgba(78,205,196,0.35); color: #4ECDC4; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .isc { font-size: 11px; color: #aaa; line-height: 1.65; flex: 1; }
+  .isc strong { color: #e0e0e0; display: block; margin-bottom: 2px; }
+  .isc em { color: #4ECDC4; font-style: normal; font-size: 10px; }
+
+  /* Phrase */
+  .phrase-row { display: flex; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04); gap: 8px; }
+  .phrase-row:last-child { border-bottom: none; }
+  .pko { font-size: 11px; color: #999; flex: 1.2; }
+  .pcn { font-size: 13px; color: #4ECDC4; font-weight: 600; flex: 1; }
+  .ppr { font-size: 10px; color: #555; flex: 1.3; font-style: italic; }
+
+  /* Chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { padding: 5px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+  .ct { background: rgba(78,205,196,0.1); border: 1px solid rgba(78,205,196,0.2); color: #4ECDC4; }
+  .cy { background: rgba(255,213,0,0.08); border: 1px solid rgba(255,213,0,0.2); color: #ffd700; }
+  .cr { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2); color: #FF6B6B; }
+  .cp { background: rgba(199,125,255,0.08); border: 1px solid rgba(199,125,255,0.2); color: #C77DFF; }
+
+  /* Emergency */
+  .emg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .emg-item { background: rgba(255,107,107,0.06); border: 1px solid rgba(255,107,107,0.15); border-radius: 10px; padding: 12px; }
+  .emg-label { font-size: 9px; color: #666; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .emg-num { font-size: 18px; font-weight: 900; color: #FF6B6B; }
+  .emg-desc { font-size: 9px; color: #555; margin-top: 3px; line-height: 1.4; }
+
+  /* Apps */
+  .app-list { display: flex; flex-direction: column; gap: 6px; }
+  .app-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+  .app-icon { font-size: 20px; flex-shrink: 0; }
+  .app-name { font-size: 12px; font-weight: 700; color: #e0e0e0; }
+  .app-desc { font-size: 10px; color: #666; margin-top: 1px; }
+
+  /* Overview – Dual clock */
+  .dual-clock { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .clock-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; text-align: center; }
+  .clock-card.hk { border-color: rgba(78,205,196,0.25); background: rgba(78,205,196,0.06); }
+  .clock-city { font-size: 10px; color: #555; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .clock-time { font-size: 28px; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+  .clock-card.hk .clock-time { color: #4ECDC4; }
+  .clock-date { font-size: 9px; color: #444; margin-top: 3px; }
+
+  /* Overview – stat grid */
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+  .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 8px; text-align: center; }
+  .stat-label { font-size: 9px; color: #444; letter-spacing: 0.05em; margin-bottom: 5px; }
+  .stat-val { font-size: 22px; font-weight: 900; line-height: 1; }
+  .stat-unit { font-size: 9px; color: #444; margin-top: 3px; }
+
+  /* Weather */
+  .wx-hero { display: flex; align-items: center; gap: 16px; padding: 20px; background: rgba(78,205,196,0.06); border: 1px solid rgba(78,205,196,0.18); border-radius: 14px; margin-bottom: 8px; }
+  .wx-emoji { font-size: 54px; line-height: 1; }
+  .wx-right { flex: 1; }
+  .wx-desc { font-size: 14px; font-weight: 700; color: #e0e0e0; margin-bottom: 3px; }
+  .wx-temp { font-size: 44px; font-weight: 900; color: #4ECDC4; line-height: 1; }
+  .wx-feel { font-size: 11px; color: #777; margin-top: 4px; }
+  .wx-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 8px; }
+  .wx-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px; text-align: center; }
+  .wx-stat-label { font-size: 9px; color: #444; margin-bottom: 4px; }
+  .wx-stat-val { font-size: 16px; font-weight: 700; color: #4ECDC4; }
+  .wx-update { font-size: 9px; color: #2a2a3a; text-align: right; margin-top: 4px; }
+  .wx-loading { text-align: center; padding: 40px 20px; color: #333; font-size: 12px; }
+  .wx-refresh { background: rgba(78,205,196,0.1); border: 1px solid rgba(78,205,196,0.2); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 11px; color: #4ECDC4; font-family: inherit; font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+
+  /* Currency */
+  .rate-hero { text-align: center; padding: 24px 20px; background: rgba(255,213,0,0.06); border: 1px solid rgba(255,213,0,0.2); border-radius: 14px; margin-bottom: 8px; }
+  .rate-label { font-size: 10px; color: #ffd700; letter-spacing: 0.12em; margin-bottom: 6px; }
+  .rate-big { font-size: 52px; font-weight: 900; color: #ffd700; line-height: 1; }
+  .rate-unit { font-size: 14px; color: #888; margin-top: 6px; }
+  .rate-update { font-size: 9px; color: #444; margin-top: 4px; }
+  .convert-table { margin-top: 4px; }
+  .conv-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,0.05); }
+  .conv-hkd { font-size: 13px; color: #ffd700; font-weight: 700; }
+  .conv-krw { font-size: 13px; color: #e0e0e0; font-weight: 700; }
+  .rate-loading { text-align: center; padding: 40px 20px; color: #333; font-size: 12px; }
+
+  /* Route items */
+  .route-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,0.05); }
+  .route-from { font-size: 11px; color: #aaa; }
+  .route-info { text-align: right; }
+  .route-time { font-size: 12px; font-weight: 700; color: #fff; }
+  .route-fare { font-size: 9px; color: #555; margin-top: 1px; }
+
+  .cityscape { position: fixed; bottom: 0; left: 0; right: 0; height: 180px; pointer-events: none; z-index: 0; opacity: 0.05; }
+  .body { position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+<svg class="cityscape" viewBox="0 0 800 180" preserveAspectRatio="xMidYMax slice">
+  <rect x="0" y="150" width="28" height="30" fill="#fff"/><rect x="42" y="120" width="28" height="60" fill="#fff"/>
+  <rect x="84" y="140" width="28" height="40" fill="#fff"/><rect x="126" y="90" width="28" height="90" fill="#fff"/>
+  <rect x="168" y="130" width="28" height="50" fill="#fff"/><rect x="210" y="110" width="28" height="70" fill="#fff"/>
+  <rect x="252" y="135" width="28" height="45" fill="#fff"/><rect x="294" y="100" width="28" height="80" fill="#fff"/>
+  <rect x="336" y="145" width="28" height="35" fill="#fff"/><rect x="378" y="115" width="28" height="65" fill="#fff"/>
+  <rect x="420" y="125" width="28" height="55" fill="#fff"/><rect x="462" y="105" width="28" height="75" fill="#fff"/>
+  <rect x="504" y="138" width="28" height="42" fill="#fff"/><rect x="546" y="92" width="28" height="88" fill="#fff"/>
+  <rect x="588" y="128" width="28" height="52" fill="#fff"/><rect x="630" y="112" width="28" height="68" fill="#fff"/>
+  <rect x="672" y="142" width="28" height="38" fill="#fff"/><rect x="714" y="85" width="28" height="95" fill="#fff"/>
+  <rect x="756" y="132" width="28" height="48" fill="#fff"/>
+</svg>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="header-icon">🇭🇰</div>
+      <div>
+        <div class="header-title">홍콩 가족여행</div>
+        <div class="header-sub">MAY 01 – 05, 2025 · CX439 / CX410</div>
+      </div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+</div>
+<div class="body" id="body"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ─── 데이터 ─── */
+const days = [
+  {
+    id:1, date:"5/1", day:"목", label:"도착의 밤", color:"#FF6B6B",
+    spots:[
+      {time:"16:35",icon:"✈️",name:"홍콩 도착 (CX439)",sub:"인천 13:40 출발 → 홍콩 16:35 도착",type:"transport",lat:22.3080,lng:113.9185},
+      {time:"18:00",icon:"🏨",name:"Royal Peninsula 체크인",sub:"8 Hung Lai Rd, Hung Hom · MTR 홍함역 실내 연결",type:"hotel",lat:22.3048,lng:114.1828},
+      {time:"19:30",icon:"🌊",name:"침사추이 워터프론트",sub:"아베뉴 오브 스타즈 산책 · 야경 포토스팟",type:"spot",lat:22.2932,lng:114.1722,restaurants:[
+        {name:"Log Ye Dim Sum",name_cn:"老爺點心",menu:"딤섬",tags:["하가우","슈마이","차슈번"],desc:"현지인이 줄 서는 정통 딤섬집. 아침 8시 오픈",price:"💰💰",tip:"주말 웨이팅 필수"},
+        {name:"One Dim Sum",menu:"딤섬",tags:["모던 딤섬","하가우","에그 푸딩"],desc:"Log Ye보다 줄 짧은 뉴오픈 딤섬 레스토랑",price:"💰💰",tip:"QR코드 주문 방식"},
+        {name:"aqua",menu:"일식·이탈리안 퓨전",tags:["스시","파노라마 뷰","야경"],desc:"17층 빅토리아 하버 뷰. 심포니 오브 라이츠와 함께",price:"💰💰💰💰",tip:"예약 필수"},
+      ]},
+      {time:"20:00",icon:"🎆",name:"심포니 오브 라이츠",sub:"매일 밤 8시 무료 레이저쇼 · 워터프론트에서 관람",type:"event",lat:22.2935,lng:114.1725},
+    ]
+  },
+  {
+    id:2, date:"5/2", day:"금", label:"디즈니랜드", color:"#FFD93D",
+    spots:[
+      {time:"08:30",icon:"🚇",name:"호텔 출발",sub:"Hung Hom → Sunny Bay 환승 → Disneyland Resort역 (약 45분)",type:"transport",lat:22.3048,lng:114.1828},
+      {time:"09:30",icon:"🏰",name:"홍콩 디즈니랜드",sub:"오픈 9:30 · 클로즈 21:00 · 디즈니 앱으로 대기시간 확인",type:"spot",lat:22.3131,lng:114.0444,restaurants:[
+        {name:"Dragon Wind 雲龍軒",menu:"광둥 중식·딤섬",tags:["미키 두부","딤섬 뷔페","캐릭터 포토"],desc:"Disney Explorers Lodge 내. 디즈니 터치 가미된 정통 광둥 중식",price:"💰💰💰",tip:"조기 예약 추천"},
+        {name:"Enchanted Garden",menu:"인터내셔널 뷔페",tags:["캐릭터 다이닝","조식 뷔페","중·양·인도식"],desc:"Disneyland Hotel 내. 캐릭터가 테이블 방문하는 마법같은 식사",price:"💰💰💰",tip:"아침 7:30 오픈"},
+        {name:"Ink & Plate",menu:"인터내셔널 뷔페",tags:["Donald Duck","스노우 크랩","~HKD 568"],desc:"Hollywood Hotel 내. 도날드 덕 캐릭터 다이닝. 디저트 훌륭",price:"💰💰💰",tip:"저녁 스노우 크랩 뷔페 인기"},
+        {name:"Walt's Café",menu:"서양식 세미뷔페",tags:["미키 번","런치 세트","웨스턴"],desc:"Disney Hotel 내. 가볍게 먹기 좋음. 미키 모양 번이 귀여움",price:"💰💰💰",tip:"공원 내 간식: Mickey 아이스크림 필수!"},
+      ]},
+      {time:"21:00",icon:"🎇",name:"불꽃놀이 & 퇴장",sub:"저녁 9시 불꽃놀이 후 퇴장 · 귀숙",type:"event",lat:22.3131,lng:114.0444},
+    ]
+  },
+  {
+    id:3, date:"5/3", day:"토", label:"란타우 + 스탠리", color:"#6BCB77",
+    spots:[
+      {time:"09:00",icon:"🚇",name:"Tung Chung역 출발",sub:"Hung Hom → Tung Chung (약 40분)",type:"transport",lat:22.2891,lng:113.9437},
+      {time:"09:30",icon:"🚡",name:"Ngong Ping 360 케이블카",sub:"크리스탈 곤돌라 추천 · 25분 탑승 · 공항 뷰 장관",type:"spot",lat:22.2600,lng:113.9160,restaurants:[
+        {name:"Matsuzaka Express 松坂",menu:"일식",tags:["라멘","우동","철판구이","덮밥"],desc:"천단대불 관람 후 가장 접근 쉬운 식당. 스파이시 포크 우동 추천",price:"💰💰",tip:"10:00~17:30 운영"},
+        {name:"Mountain Café",menu:"서양식·카페",tags:["볶음밥","샌드위치","블랙포레스트 케이크"],desc:"Ngong Ping 뷰 카페. 인도 출신 셰프의 홈메이드 소스 샌드위치",price:"💰💰",tip:"케이크류 추천"},
+      ]},
+      {time:"10:30",icon:"☸️",name:"천단대불 + 포린수도원",sub:"268계단 등반 · 수도원 채식 런치도 가능",type:"spot",lat:22.2540,lng:113.9050},
+      {time:"14:30",icon:"🛍️",name:"스탠리마켓",sub:"Central → 버스 6/6A/260 (약 1시간) · 기념품·의류 쇼핑",type:"spot",lat:22.2193,lng:114.2143,restaurants:[
+        {name:"Pane e Latte",menu:"카페·파스타·브런치",tags:["트러플 파스타","스테이크 에그","베이커리"],desc:"스탠리 해변가 유럽 감성 카페. 이탈리안 베이커리 테이크아웃도 가능",price:"💰💰",tip:"8:00~20:15 운영"},
+        {name:"Mamie Yvonne",menu:"프렌치 크레페·피자",tags:["메밀 크레페","홍합","피자"],desc:"골목 속 소박한 프랑스 식당. 버크위트 크레페가 시그니처",price:"💰💰",tip:"⚠️ 수요일 휴무 · 좌석 15석 소규모"},
+      ]},
+    ]
+  },
+  {
+    id:4, date:"5/4", day:"일", label:"피크 + 야시장", color:"#C77DFF",
+    spots:[
+      {time:"09:30",icon:"🏔️",name:"빅토리아 피크",sub:"피크 트램 탑승 · Lugard Road 무료 전망 산책로 강추",type:"spot",lat:22.2759,lng:114.1455,restaurants:[
+        {name:"蔚珍小品 Petit Jardin",menu:"딤섬·샤오롱바오",tags:["샤오롱바오","군만두","비건 옵션"],desc:"피크 타워 내 평점 4.9. 샤오롱바오를 두 번 시키게 되는 집",price:"💰💰",tip:"11:00~20:00 운영"},
+        {name:"Rajasthan Rifles",menu:"인도 요리",tags:["버터 치킨","피시 커리","탄두리 난"],desc:"1920년대 영국-인도 장교 클럽 컨셉. 피크 갤러리아 내",price:"💰💰💰",tip:"주말 8:30 오픈"},
+        {name:"Bubba Gump Shrimp",menu:"미국식·씨푸드",tags:["클램차우더","새우 요리","포레스트 검프 테마"],desc:"피크 타워 3층. 홍콩 야경과 함께 즐기는 미국식 씨푸드",price:"💰💰💰",tip:"클램차우더는 필수 주문"},
+      ]},
+      {time:"12:00",icon:"🛗",name:"미들레벨 에스컬레이터 + 소호",sub:"세계 최장 야외 에스컬레이터 · 소호 맛집 탐방",type:"spot",lat:22.2830,lng:114.1520,restaurants:[
+        {name:"ORKA Restaurant & Bar",menu:"노르딕 퓨전·비건 친화",tags:["불고기 버거","연어 파스타","트러플 머쉬룸"],desc:"소호 숨은 맛집. 평점 4.8. 노르딕 인테리어. 반려동물 동반 가능",price:"💰💰",tip:"일요일 휴무 주의"},
+        {name:"Le Jardin à Soho",menu:"유럽식 브런치·스테이크",tags:["립아이 스테이크","클레이팟 라이스","브런치"],desc:"소호 중심 유럽풍. 호주산 립아이와 본마로우 클레이팟이 시그니처",price:"💰💰💰",tip:"서비스가 느릴 수 있으니 여유롭게"},
+      ]},
+      {time:"16:00",icon:"👗",name:"레이디스마켓 (몽콕)",sub:"가격 흥정 필수 · 제시가의 절반부터 시작",type:"spot",lat:22.3194,lng:114.1688,restaurants:[
+        {name:"Mong Kok Seafood",menu:"해산물 볶음",tags:["마늘 게","조개찜","전복"],desc:"몽콕 현지인 해산물 맛집. 클램·마늘게 인기. 저녁 5시 오픈",price:"💰💰",tip:"리뷰 작성 시 조개 서비스"},
+      ]},
+      {time:"18:30",icon:"🌙",name:"템플 스트리트 야시장",sub:"홍콩 최고 야시장 · 오후 6시부터 활기",type:"spot",lat:22.3097,lng:114.1706,restaurants:[
+        {name:"Wing Fat Seafood 永發海鮮",menu:"다이파이동 해산물",tags:["볶음 새우","게","쌀국수","노천식"],desc:"야시장 한복판 시끌벅적 노천 해산물. 새우·조개 초신선.",price:"💰💰",tip:"현금 결제만 가능"},
+        {name:"Lantern Seafood 燈籠",menu:"광둥 해산물·로스트",tags:["흑트러플 로스트구스","딤섬","새벽 2시까지"],desc:"40년 전통 광둥 해산물. 흑트러플 로스트구스는 사전 예약 필수",price:"💰💰💰",tip:"새벽 2시까지 영업"},
+      ]},
+    ]
+  },
+  {
+    id:5, date:"5/5", day:"월", label:"귀국 🎉", color:"#4ECDC4",
+    spots:[
+      {time:"07:00",icon:"🏨",name:"체크아웃",sub:"Royal Peninsula 체크아웃 후 공항 이동 시작",type:"hotel",lat:22.3048,lng:114.1828},
+      {time:"07:10",icon:"🚇",name:"공항으로 이동",sub:"Hung Hom → Tsing Yi → Airport Express (총 약 70분)",type:"transport",lat:22.3048,lng:114.1828},
+      {time:"09:25",icon:"✈️",name:"홍콩 출발 (CX410)",sub:"홍콩 09:25 → 인천 14:10 도착 · 어린이날 공휴일 🎉",type:"transport",lat:22.3080,lng:113.9185},
+    ]
+  },
+];
+
+/* ─── 상태 ─── */
+let activeDay = 0;
+let activeView = 'schedule';
+let activeTab = 'day';
+let activeInfoTab = 'overview';
+let expandedSpot = null;
+let expandedRest = null;
+let leafletMap = null;
+let clockTimer = null;
+let wxData = null;
+let rateData = null;
+
+/* ─── 지도 ─── */
+function initMap(dayIndex) {
+  const day = days[dayIndex];
+  const mapEl = document.getElementById('map-container');
+  if (!mapEl) return;
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  const spotsWithCoords = day.spots.filter(s => s.lat && s.lng);
+  if (!spotsWithCoords.length) return;
+  leafletMap = L.map('map-container', { zoomControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org" style="color:#4ECDC4;">OpenStreetMap</a>',
+    maxZoom: 18,
+  }).addTo(leafletMap);
+  let num = 1;
+  spotsWithCoords.forEach(spot => {
+    const isT = spot.type === 'transport';
+    const bg = isT ? '#1e1e2e' : day.color;
+    const bc = isT ? '#333' : day.color;
+    const tc = isT ? '#555' : '#000';
+    const sz = isT ? 16 : 26;
+    const lbl = isT ? '→' : String(num++);
+    const sh = isT ? '' : `box-shadow:0 0 10px ${day.color}88,0 2px 8px rgba(0,0,0,0.5);`;
+    const icon = L.divIcon({
+      html: `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${bg};border:2px solid ${bc};display:flex;align-items:center;justify-content:center;font-size:${isT?9:11}px;font-weight:700;color:${tc};${sh}font-family:inherit;">${lbl}</div>`,
+      className: '', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2], popupAnchor:[0,-sz/2-2],
+    });
+    L.marker([spot.lat, spot.lng], {icon})
+      .bindPopup(`<b>${spot.icon} ${spot.name}</b><br><span style="color:#888;font-size:10px;">${spot.time} · ${spot.sub}</span>`)
+      .addTo(leafletMap);
+  });
+  if (spotsWithCoords.length === 1) {
+    leafletMap.setView([spotsWithCoords[0].lat, spotsWithCoords[0].lng], 14);
+  } else {
+    leafletMap.fitBounds(L.latLngBounds(spotsWithCoords.map(s=>[s.lat,s.lng])), {padding:[44,44]});
+  }
+}
+
+/* ─── 렌더 루트 ─── */
+function render() {
+  stopClock();
+  renderTabs();
+  if (activeTab === 'info') { renderInfo(); return; }
+  renderDay();
+}
+
+/* ─── 탭 헤더 ─── */
+function renderTabs() {
+  document.getElementById('tabs').innerHTML =
+    days.map((d,i) => `
+      <button class="tab ${activeTab==='day' && i===activeDay?'active':''}" onclick="switchDay(${i})"
+        style="${activeTab==='day'&&i===activeDay?`color:${d.color};border-bottom-color:${d.color}`:''}" >
+        <span class="tab-date">${d.date}</span>
+        <span class="tab-day">${d.day}</span>
+      </button>
+    `).join('') + `
+    <button class="tab ${activeTab==='info'?'active':''}" onclick="switchInfo()"
+      style="${activeTab==='info'?'color:#4ECDC4;border-bottom-color:#4ECDC4':''}" >
+      <span class="tab-date" style="font-size:16px;">ℹ️</span>
+      <span class="tab-day">정보</span>
+    </button>
+  `;
+}
+
+/* ─── 일정 뷰 ─── */
+function renderDay() {
+  const day = days[activeDay];
+  let html = `
+    <div class="day-hero" style="background:linear-gradient(135deg,${day.color}12,${day.color}06);border:1px solid ${day.color}22;">
+      <div class="day-bar" style="background:${day.color};box-shadow:0 0 14px ${day.color};"></div>
+      <div>
+        <div class="day-date">${day.date} <span>(${day.day})</span></div>
+        <div class="day-label" style="color:${day.color};">${day.label}</div>
+      </div>
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn ${activeView==='schedule'?'active':''}" onclick="switchView('schedule')">📋 일정</button>
+      <button class="view-btn ${activeView==='map'?'active':''}" onclick="switchView('map')">🗺 지도</button>
+    </div>
+  `;
+  if (activeView === 'map') {
+    html += `<div id="map-container"></div><div class="map-spot-list"><div class="map-spot-list-title">TODAY'S SPOTS</div>`;
+    let n = 1;
+    day.spots.forEach(s => {
+      if (!s.lat || !s.lng) return;
+      const isT = s.type==='transport';
+      html += `<div class="map-spot-item">
+        <div class="map-spot-num" style="background:${isT?'rgba(255,255,255,0.05)':day.color+'22'};border:1px solid ${isT?'rgba(255,255,255,0.08)':day.color+'55'};color:${isT?'#444':day.color};">${isT?'→':n++}</div>
+        <div><div class="map-spot-name" style="color:${isT?'#555':'#ccc'};">${s.icon} ${s.name}</div><div class="map-spot-time">${s.time}</div></div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div class="timeline"><div class="timeline-line" style="background:linear-gradient(180deg,${day.color}88,transparent);"></div>`;
+    day.spots.forEach((spot, si) => {
+      const isT = spot.type==='transport';
+      const dotC = isT?'#2a2a3a':day.color;
+      const dotS = isT?'':'box-shadow:0 0 10px '+day.color+'77;';
+      const sOpen = expandedSpot===si;
+      html += `
+        <div class="spot-wrap">
+          <div class="spot-dot" style="border-color:${dotC};${dotS}${isT?'background:#111;':''}"></div>
+          <div class="spot-time">${spot.time}</div>
+          <div class="spot-card ${isT?'transport':''}" style="border-color:${isT?'rgba(255,255,255,0.04)':day.color+'2a'};"
+            ${spot.restaurants?`onclick="toggleSpot(${si})"`:''}>
+            <div class="spot-inner">
+              <div class="spot-left">
+                <span class="spot-emoji">${spot.icon}</span>
+                <div>
+                  <div class="spot-name ${isT?'transport':''}">${spot.name}</div>
+                  <div class="spot-sub">${spot.sub}</div>
+                </div>
+              </div>
+              ${spot.restaurants?`
+                <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+                  <div class="rest-badge" style="background:${day.color}20;border-color:${day.color}40;color:${day.color};">🍽 ${spot.restaurants.length}</div>
+                  <span class="toggle-arrow">${sOpen?'▲':'▼'}</span>
+                </div>`:''}
+            </div>
+          </div>
+      `;
+      if (spot.restaurants && sOpen) {
+        html += `<div class="rests">`;
+        spot.restaurants.forEach((r, ri) => {
+          const rk = `${si}-${ri}`;
+          const rO = expandedRest===rk;
+          html += `
+            <div class="rest-card" style="background:${rO?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.03)'};border-color:${rO?day.color+'50':'rgba(255,255,255,0.07)'};"
+              onclick="toggleRest('${rk}')">
+              <div class="rest-header">
+                <div style="flex:1;min-width:0;">
+                  <div><span class="rest-name">${r.name}</span>${r.name_cn?`<span class="rest-cn">${r.name_cn}</span>`:''}</div>
+                  <div class="rest-meta">
+                    <span class="rest-menu" style="background:${day.color}1e;color:${day.color};">${r.menu}</span>
+                    <span class="rest-price">${r.price}</span>
+                  </div>
+                </div>
+                <span class="toggle-arrow">${rO?'▲':'▼'}</span>
+              </div>
+              ${rO?`<div class="rest-detail">
+                <div class="rest-desc">${r.desc}</div>
+                <div class="tags">${r.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+                <div class="tip-box"><span style="font-size:12px;">💡</span><span class="tip-text">${r.tip}</span></div>
+              </div>`:''}
+            </div>`;
+        });
+        html += `</div>`;
+      }
+      html += `</div>`;
+    });
+    html += `</div>
+      <div class="legend">
+        <span class="legend-title">가격대 (HKD/인)</span>
+        <span class="legend-item">💰 ~100</span>
+        <span class="legend-item">💰💰 100~200</span>
+        <span class="legend-item">💰💰💰 200~400</span>
+        <span class="legend-item">💰💰💰💰 400+</span>
+      </div>`;
+  }
+  document.getElementById('body').innerHTML = html;
+  if (activeView === 'map') setTimeout(() => initMap(activeDay), 50);
+}
+
+/* ─── 정보 탭 ─── */
+const infoTabs = [
+  {id:'overview', icon:'🏠', label:'개요'},
+  {id:'arrival',  icon:'✈️', label:'입국'},
+  {id:'transport',icon:'🚇', label:'교통'},
+  {id:'currency', icon:'💰', label:'환전'},
+  {id:'phrases',  icon:'💬', label:'회화'},
+  {id:'weather',  icon:'🌡️', label:'날씨'},
+  {id:'apps',     icon:'📱', label:'앱'},
+  {id:'emergency',icon:'🆘', label:'긴급'},
+];
+
+function renderInfo() {
+  const subtabHtml = `
+    <div class="info-subtabs-wrap">
+      <div class="info-subtabs">
+        ${infoTabs.map(t=>`
+          <button class="ist ${activeInfoTab===t.id?'active':''}" onclick="switchInfoTab('${t.id}')">
+            <span class="si">${t.icon}</span>
+            <span class="sl">${t.label}</span>
+          </button>`).join('')}
+      </div>
+    </div>`;
+
+  let content = '';
+  if (activeInfoTab === 'overview') content = renderOverview();
+  else if (activeInfoTab === 'arrival') content = renderArrival();
+  else if (activeInfoTab === 'transport') content = renderTransport();
+  else if (activeInfoTab === 'currency') content = renderCurrency();
+  else if (activeInfoTab === 'phrases') content = renderPhrases();
+  else if (activeInfoTab === 'weather') content = renderWeather();
+  else if (activeInfoTab === 'apps') content = renderApps();
+  else if (activeInfoTab === 'emergency') content = renderEmergency();
+
+  document.getElementById('body').innerHTML = subtabHtml + content;
+
+  if (activeInfoTab === 'overview') startClock();
+  if (activeInfoTab === 'weather' && !wxData) fetchWeather();
+  if (activeInfoTab === 'currency' && !rateData) fetchRate();
+}
+
+/* ── 개요 ── */
+function renderOverview() {
+  const dep = new Date('2025-05-01T13:40:00+09:00');
+  const ret = new Date('2025-05-05T14:10:00+09:00');
+  const now = new Date();
+  const msLeft = dep - now;
+  let countdownHtml = '';
+  if (msLeft > 0) {
+    const days_ = Math.floor(msLeft/86400000);
+    const hrs = Math.floor((msLeft%86400000)/3600000);
+    countdownHtml = `<div class="stat-card" style="border-color:rgba(255,107,107,0.2);background:rgba(255,107,107,0.05);">
+      <div class="stat-label">출발까지</div>
+      <div class="stat-val" style="color:#FF6B6B;font-size:${days_>99?'18':'22'}px;">${days_}일 ${hrs}h</div>
+      <div class="stat-unit">5월 1일 출발</div>
+    </div>`;
+  } else {
+    const tripEnd = ret - now;
+    if (tripEnd > 0) {
+      countdownHtml = `<div class="stat-card" style="border-color:rgba(78,205,196,0.2);background:rgba(78,205,196,0.05);">
+        <div class="stat-label">여행 중 🎉</div>
+        <div class="stat-val" style="color:#4ECDC4;">D+${Math.floor((now-dep)/86400000)}</div>
+        <div class="stat-unit">즐기는 중!</div>
+      </div>`;
+    } else {
+      countdownHtml = `<div class="stat-card" style="border-color:rgba(199,125,255,0.2);background:rgba(199,125,255,0.05);">
+        <div class="stat-label">여행 완료 ✨</div>
+        <div class="stat-val" style="color:#C77DFF;">완료</div>
+        <div class="stat-unit">추억 가득!</div>
+      </div>`;
+    }
+  }
+  return `
+    <div class="dual-clock">
+      <div class="clock-card">
+        <div class="clock-city">🇰🇷 SEOUL</div>
+        <div class="clock-time" id="clock-sel">--:--:--</div>
+        <div class="clock-date" id="date-sel">---</div>
+      </div>
+      <div class="clock-card hk">
+        <div class="clock-city">🇭🇰 HONG KONG</div>
+        <div class="clock-time" id="clock-hk">--:--:--</div>
+        <div class="clock-date" id="date-hk">---</div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      ${countdownHtml}
+      <div class="stat-card"><div class="stat-label">여행 기간</div><div class="stat-val" style="color:#FFD93D;">4박5일</div><div class="stat-unit">5/1 – 5/5</div></div>
+      <div class="stat-card"><div class="stat-label">항공편</div><div class="stat-val" style="color:#C77DFF;font-size:14px;">CX</div><div class="stat-unit">캐세이퍼시픽</div></div>
+    </div>
+    <div class="info-card" style="margin-top:8px;">
+      <div class="info-card-header">🗓 일정 요약</div>
+      <div style="font-size:11px;color:#aaa;line-height:2.0;">
+        <span style="color:#FF6B6B;font-weight:700;">5/1 목</span> — 홍콩 도착 · 침사추이 야경 · 심포니 오브 라이츠<br>
+        <span style="color:#FFD93D;font-weight:700;">5/2 금</span> — 홍콩 디즈니랜드 하루 종일<br>
+        <span style="color:#6BCB77;font-weight:700;">5/3 토</span> — 란타우섬 (케이블카·천단대불) → 스탠리마켓<br>
+        <span style="color:#C77DFF;font-weight:700;">5/4 일</span> — 빅토리아 피크 → 소호 → 레이디스마켓 → 야시장<br>
+        <span style="color:#4ECDC4;font-weight:700;">5/5 월</span> — 체크아웃 → 홍콩 출발 (CX410) → 인천 14:10 도착
+      </div>
+    </div>
+    <div class="info-card" style="background:rgba(255,213,0,0.04);border-color:rgba(255,213,0,0.12);margin-top:4px;">
+      <div style="font-size:11px;color:#ffd700;line-height:1.75;">
+        🏨 <strong style="color:#ffd700;">Royal Peninsula Hotel</strong> — 홍함역 실내 직결 · 침사추이 도보 5분<br>
+        ✈️ 캐세이퍼시픽 <strong style="color:#ffd700;">CX439</strong> (인천→홍콩) / <strong style="color:#ffd700;">CX410</strong> (홍콩→인천)
+      </div>
+    </div>`;
+}
+
+/* ── 입국 ── */
+function renderArrival() {
+  return `
+    <div class="info-card">
+      <div class="info-card-header">✈️ 홍콩 입국 순서 (한국인 무비자 90일)</div>
+      <div class="info-steps">
+        <div class="info-step"><div class="isn">1</div><div class="isc"><strong>검역 & 체온 스캔</strong>비행기 하차 후 자동 통과. 이상 없으면 별도 절차 없음</div></div>
+        <div class="info-step"><div class="isn">2</div><div class="isc"><strong>입국심사 (Immigration)</strong>한국인은 <em>유인 카운터 (Visitor)</em> 이용. e-Channel은 홍콩 거주자 전용.<br>입국신고서는 2023년부터 폐지 — 별도 작성 불필요.<br>심사관 질문 시 "Tourism, 4 nights" 답변</div></div>
+        <div class="info-step"><div class="isn">3</div><div class="isc"><strong>수하물 수취 (Baggage Claim)</strong>도착 모니터에서 CX439 → 벨트 번호 확인</div></div>
+        <div class="info-step"><div class="isn">4</div><div class="isc"><strong>세관 통과 (Customs)</strong>신고 물품 없으면 Green Channel(초록 표시)으로 통과.<br>1인 HKD 400 이상 선물·주류 신고 권장</div></div>
+        <div class="info-step"><div class="isn">5</div><div class="isc"><strong>도착 로비</strong>옥토퍼스 카드 구매 후 Airport Express 또는 버스·택시 탑승</div></div>
+      </div>
+    </div>
+    <div class="info-card" style="background:rgba(255,213,0,0.05);border-color:rgba(255,213,0,0.15);">
+      <div style="font-size:11px;color:#ffd700;line-height:1.75;">
+        💡 어린이 동반 가족은 <strong style="color:#ffd700;">패밀리 레인(Family Lane)</strong> 이용 가능 — 줄 더 짧음.<br>
+        입국심사 소요시간 보통 30~60분.
+      </div>
+    </div>
+    <div class="sec-label">🛄 수하물 & 세관 규정</div>
+    <div class="info-card">
+      <div style="font-size:11px;color:#aaa;line-height:1.9;">
+        현금 HKD 120,000 이상 소지 시 신고 필요<br>
+        담배 1인 19개비 이하 무관세 (20개비 = 1갑 넘으면 신고)<br>
+        주류 1리터 이하 무관세<br>
+        <span style="color:#4ECDC4;">💡 과자·김·라면 등 식품은 자유롭게 반입 가능</span>
+      </div>
+    </div>
+    <div class="sec-label">🏨 호텔 체크인</div>
+    <div class="info-card">
+      <div class="info-card-header">Royal Peninsula Hotel</div>
+      <div style="font-size:11px;color:#aaa;line-height:1.9;">
+        주소: 8 Hung Lai Road, Hung Hom, Kowloon<br>
+        체크인: 15:00 / 체크아웃: 12:00<br>
+        MTR 홍함(Hung Hom)역 — 실내 통로 직결 연결<br>
+        <span style="color:#4ECDC4;">💡 짐 먼저 맡기고 주변 돌아봐도 됨 (early check-in 요청 가능)</span>
+      </div>
+    </div>`;
+}
+
+/* ── 교통 ── */
+function renderTransport() {
+  const routes = [
+    {from:'공항 → 홍콩역', time:'24분', fare:'HKD 115', note:'Airport Express'},
+    {from:'홍함 → 침사추이', time:'약 8분', fare:'HKD ~7', note:'East Rail + 환승'},
+    {from:'홍함 → Sunny Bay (디즈니)', time:'약 45분', fare:'HKD 25', note:'Tuen Ma Line'},
+    {from:'홍함 → Tung Chung (란타우)', time:'약 40분', fare:'HKD 28', note:'Tuen Ma + Tung Chung'},
+    {from:'홍함 → 몽콕', time:'약 8분', fare:'HKD 8', note:'East Rail Line'},
+    {from:'Central → 스탠리', time:'약 55분', fare:'HKD 10~12', note:'버스 6/6A/260'},
+  ];
+  return `
+    <div class="info-card">
+      <div class="info-card-header">🐙 옥토퍼스 카드 (Octopus Card)</div>
+      <div class="info-steps">
+        <div class="info-step">
+          <div class="isn" style="background:rgba(255,107,107,0.15);border-color:rgba(255,107,107,0.35);color:#FF6B6B;">💳</div>
+          <div class="isc"><strong>구매</strong>공항 도착 로비 고객서비스센터 또는 MTR 역 자동발매기<br>HKD 150 (보증금 HKD 50 + 잔액 HKD 100)</div>
+        </div>
+        <div class="info-step">
+          <div class="isn" style="background:rgba(255,107,107,0.15);border-color:rgba(255,107,107,0.35);color:#FF6B6B;">🔋</div>
+          <div class="isc"><strong>충전</strong>MTR 역 자동발매기 · 세븐일레븐 · 서클K</div>
+        </div>
+        <div class="info-step">
+          <div class="isn" style="background:rgba(255,107,107,0.15);border-color:rgba(255,107,107,0.35);color:#FF6B6B;">🛍</div>
+          <div class="isc"><strong>사용처</strong>MTR · 버스 · 트램 · 페리 · 세븐일레븐 · 맥도날드 · 편의점 등 수천 가맹점</div>
+        </div>
+        <div class="info-step">
+          <div class="isn" style="background:rgba(255,107,107,0.15);border-color:rgba(255,107,107,0.35);color:#FF6B6B;">↩️</div>
+          <div class="isc"><strong>출국 전 환불</strong>MTR 역 고객서비스센터 잔액+보증금 환불 (HKD 9 수수료 차감)</div>
+        </div>
+      </div>
+    </div>
+    <div class="sec-label">🚄 주요 노선 & 소요시간</div>
+    ${routes.map(r=>`
+      <div class="route-row">
+        <div>
+          <div class="route-from">${r.from}</div>
+          <div style="font-size:9px;color:#3a3a4a;margin-top:2px;">${r.note}</div>
+        </div>
+        <div class="route-info">
+          <div class="route-time">${r.time}</div>
+          <div class="route-fare">${r.fare}</div>
+        </div>
+      </div>`).join('')}
+    <div class="info-card" style="margin-top:8px;background:rgba(78,205,196,0.05);border-color:rgba(78,205,196,0.15);">
+      <div style="font-size:11px;color:#4ECDC4;line-height:1.75;">
+        💡 <strong style="color:#4ECDC4;">막차 자정~00:30.</strong> 야시장(5/4) 귀가 시 시간 꼭 확인!<br>
+        홍함역은 East Rail Line + Tuen Ma Line 두 노선 연결<br>
+        디즈니랜드 Sunny Bay역 환승 후 Disneyland Resort역 하차
+      </div>
+    </div>
+    <div class="sec-label">🚕 택시 & 기타</div>
+    <div class="info-card">
+      <div style="font-size:11px;color:#aaa;line-height:1.9;">
+        <strong style="color:#fff;">빨간 택시</strong> — 홍콩 시내 전역. 기본요금 HKD 27<br>
+        <strong style="color:#fff;">녹색 택시</strong> — 신계 지역 한정<br>
+        <strong style="color:#fff;">스타 페리</strong> — 침사추이 ↔ 센트럴 HKD 3.4 (역사적인 뷰)<br>
+        <strong style="color:#fff;">딤섬 트램</strong> — 홍콩섬 동서 구간 HKD 3 균일<br>
+        <span style="color:#ffd700;">💡 Uber/HKTaxi 앱으로 편리하게 호출 가능</span>
+      </div>
+    </div>`;
+}
+
+/* ── 환전 ── */
+function renderCurrency() {
+  const convAmounts = [10, 50, 100, 200, 500, 1000];
+  const rate = rateData ? rateData : null;
+  const rateNum = rate ? rate.krw : null;
+
+  const heroHtml = rateNum
+    ? `<div class="rate-hero">
+        <div class="rate-label">🔴 실시간 환율 (HKD → KRW)</div>
+        <div class="rate-big">${Math.round(rateNum)}</div>
+        <div class="rate-unit">1 HKD = ${Math.round(rateNum)}원</div>
+        <div class="rate-update">기준: ${rate.date} · <button onclick="fetchRate()" style="background:none;border:none;color:#ffd700;cursor:pointer;font-size:9px;font-family:inherit;">새로고침 🔄</button></div>
+      </div>`
+    : `<div class="info-card" id="rate-loading">
+        <div class="rate-loading">환율 불러오는 중... ⏳<br><br>
+          <button onclick="fetchRate()" style="background:rgba(255,213,0,0.1);border:1px solid rgba(255,213,0,0.25);border-radius:8px;padding:8px 16px;color:#ffd700;cursor:pointer;font-size:11px;font-family:inherit;font-weight:600;">환율 불러오기 💰</button>
+        </div>
+      </div>`;
+
+  const convHtml = rateNum
+    ? `<div class="info-card">
+        <div class="info-card-header">💱 환산 계산기</div>
+        <div class="convert-table">
+          ${convAmounts.map(a=>`
+            <div class="conv-row">
+              <span class="conv-hkd">HKD ${a}</span>
+              <span class="conv-krw">≈ ${Math.round(a*rateNum).toLocaleString()}원</span>
+            </div>`).join('')}
+        </div>
+      </div>`
+    : '';
+
+  return `
+    ${heroHtml}
+    ${convHtml}
+    <div class="sec-label">💡 환전 꿀팁</div>
+    <div class="info-card">
+      <div style="font-size:11px;color:#aaa;line-height:1.8;margin-bottom:10px;">
+        <strong style="color:#FF6B6B;">⚠️ 공항 환전소 환율 최악!</strong> — 시내 환전 강력 추천<br>
+        <strong style="color:#fff;">침사추이 카메론 로드</strong> 인근 사설 환전소 환율 좋음<br>
+        한국에서 원화 → HKD 환전 후 가져오는 것도 좋음
+      </div>
+      <div class="chips">
+        <span class="chip ct">카드 대부분 가능</span>
+        <span class="chip cy">야시장·노점 현금만</span>
+        <span class="chip cr">공항 환전 비추</span>
+        <span class="chip cp">서비스차지 10% 확인</span>
+      </div>
+    </div>
+    <div class="sec-label">💳 결제 방식별 팁</div>
+    <div class="info-card">
+      <div style="font-size:11px;color:#aaa;line-height:1.9;">
+        <strong style="color:#fff;">신용카드</strong> — 식당·호텔·쇼핑몰 대부분 VISA/Master 사용 가능<br>
+        <strong style="color:#fff;">옥토퍼스</strong> — 교통·편의점·패스트푸드 최적<br>
+        <strong style="color:#fff;">현금</strong> — 노점·야시장·사설 환전소 필수<br>
+        <strong style="color:#fff;">알리페이/위챗페이</strong> — 일부 상점에서 사용 가능<br>
+        <span style="color:#4ECDC4;">💡 음식점 계산서에 10% Service Charge 자동 포함 여부 확인</span>
+      </div>
+    </div>`;
+}
+
+/* ── 회화 ── */
+function renderPhrases() {
+  const phrases = [
+    {ko:'안녕하세요',cn:'你好',pr:'nei hou'},
+    {ko:'감사합니다 (서비스)',cn:'唔該',pr:'m̀h gōi'},
+    {ko:'감사합니다 (선물)',cn:'多謝',pr:'dō jeh'},
+    {ko:'얼마예요?',cn:'幾多錢?',pr:'géi dō chín?'},
+    {ko:'너무 비싸요',cn:'太貴喇',pr:'taai gwai la'},
+    {ko:'깎아주세요',cn:'平啲得唔得?',pr:'pèhng dī dāk m̀h dāk?'},
+    {ko:'맛있어요!',cn:'好食!',pr:'hóu sihk!'},
+    {ko:'계산해주세요',cn:'唔該埋單',pr:'m̀h gōi màaih dāan'},
+    {ko:'화장실 어디예요?',cn:'廁所喺邊?',pr:'chi sóh hái bīn?'},
+    {ko:'영어 하세요?',cn:'識唔識講英文?',pr:'sīk m̀h sīk góng Yīng màhn?'},
+    {ko:'이거 하나 주세요',cn:'唔該,要呢個',pr:'m̀h gōi, yiu nī go'},
+    {ko:'사진 찍어도 될까요?',cn:'可唔可以影相?',pr:'hó m̀h hó yíh yíng séung?'},
+    {ko:'맵지 않게 해주세요',cn:'唔好辣',pr:'m̀h hóu laaht'},
+    {ko:'물 한 잔 주세요',cn:'唔該俾杯水',pr:'m̀h gōi bei bui séui'},
+    {ko:'길을 잃었어요',cn:'我唔識路',pr:'ngóh m̀h sīk louh'},
+  ];
+  return `
+    <div class="info-card">
+      <div class="info-card-header">기본 광둥어 회화</div>
+      ${phrases.map(p=>`<div class="phrase-row"><span class="pko">${p.ko}</span><span class="pcn">${p.cn}</span><span class="ppr">${p.pr}</span></div>`).join('')}
+    </div>
+    <div class="info-card" style="background:rgba(255,213,0,0.04);border-color:rgba(255,213,0,0.12);">
+      <div style="font-size:11px;color:#ffd700;line-height:1.7;">
+        💡 홍콩인 대부분 <strong style="color:#ffd700;">영어 소통 가능</strong>. 관광지·호텔·레스토랑은 영어만으로 충분.<br>
+        광둥어 한 마디에 현지인들 매우 좋아함!
+      </div>
+    </div>
+    <div class="sec-label">🍽 식당에서 유용한 표현</div>
+    <div class="info-card">
+      ${[
+        {ko:'메뉴 주세요',cn:'唔該俾個餐牌',pr:'m̀h gōi bei go chāan páaih'},
+        {ko:'이것과 같은 것으로',cn:'同佢一樣',pr:'tùhng kéuih yāt yeuhng'},
+        {ko:'포장해주세요',cn:'唔該打包',pr:'m̀h gōi dá bāau'},
+        {ko:'맵게 해주세요',cn:'要辣嘅',pr:'yiu laaht ge'},
+      ].map(p=>`<div class="phrase-row"><span class="pko">${p.ko}</span><span class="pcn">${p.cn}</span><span class="ppr">${p.pr}</span></div>`).join('')}
+    </div>
+    <div class="sec-label">🛍 쇼핑할 때</div>
+    <div class="info-card">
+      ${[
+        {ko:'이것 있어요?',cn:'有冇呢個?',pr:'yáuh móuh nī go?'},
+        {ko:'다른 색상 있나요?',cn:'有冇其他顏色?',pr:'yáuh móuh kèih tā ngàahn sīk?'},
+        {ko:'입어봐도 될까요?',cn:'可唔可以試穿?',pr:'hó m̀h hó yíh si chyūn?'},
+        {ko:'너무 작아요/커요',cn:'太細/太大',pr:'taai sai / taai daaih'},
+      ].map(p=>`<div class="phrase-row"><span class="pko">${p.ko}</span><span class="pcn">${p.cn}</span><span class="ppr">${p.pr}</span></div>`).join('')}
+    </div>`;
+}
+
+/* ── 날씨 ── */
+function wmoToKo(code) {
+  if (code === 0) return {txt:'맑음', emoji:'☀️'};
+  if (code <= 2) return {txt:'대체로 맑음', emoji:'🌤️'};
+  if (code === 3) return {txt:'흐림', emoji:'☁️'};
+  if (code <= 48) return {txt:'안개', emoji:'🌫️'};
+  if (code <= 57) return {txt:'이슬비', emoji:'🌦️'};
+  if (code <= 67) return {txt:'비', emoji:'🌧️'};
+  if (code <= 77) return {txt:'눈', emoji:'❄️'};
+  if (code <= 82) return {txt:'소나기', emoji:'🌦️'};
+  if (code <= 84) return {txt:'강한 소나기', emoji:'⛈️'};
+  if (code <= 99) return {txt:'뇌우', emoji:'⛈️'};
+  return {txt:'불명', emoji:'🌀'};
+}
+function renderWeather() {
+  if (!wxData) {
+    return `<div class="info-card" id="wx-loading">
+      <div class="wx-loading">홍콩 날씨 불러오는 중... ⏳<br><br>
+        <button onclick="fetchWeather()" style="background:rgba(78,205,196,0.1);border:1px solid rgba(78,205,196,0.25);border-radius:8px;padding:8px 16px;color:#4ECDC4;cursor:pointer;font-size:11px;font-family:inherit;font-weight:600;">날씨 불러오기 🌡️</button>
+      </div>
+    </div>
+    <div class="info-card" style="margin-top:0px;">
+      <div class="info-card-header">📅 홍콩 5월 날씨 (통계 기준)</div>
+      <div style="font-size:11px;color:#aaa;line-height:1.8;margin-bottom:10px;">
+        평균 기온 <strong style="color:#fff;">25~29°C</strong> · 습도 <strong style="color:#fff;">85% 이상</strong><br>
+        장마 직전 — 갑작스러운 소나기 잦음<br>
+        실내 에어컨 매우 강해서 체감 온도 낮을 수 있음
+      </div>
+      <div class="chips">
+        <span class="chip ct">☂️ 접이식 우산 필수</span>
+        <span class="chip ct">🧥 얇은 카디건</span>
+        <span class="chip cy">🧴 선크림 SPF50+</span>
+        <span class="chip cy">👟 편한 운동화</span>
+        <span class="chip cr">🩴 슬리퍼 비추</span>
+      </div>
+    </div>`;
+  }
+  const c = wxData.current;
+  const wmo = wmoToKo(c.weather_code);
+  return `
+    <button class="wx-refresh" onclick="fetchWeather()">🔄 새로고침 <span style="color:#333;font-weight:400;font-size:10px;">· 실시간 홍콩 날씨</span></button>
+    <div class="wx-hero">
+      <div class="wx-emoji">${wmo.emoji}</div>
+      <div class="wx-right">
+        <div class="wx-desc">${wmo.txt}</div>
+        <div class="wx-temp">${Math.round(c.temperature_2m)}°C</div>
+        <div class="wx-feel">체감 ${Math.round(c.apparent_temperature)}°C · 습도 ${c.relative_humidity_2m}%</div>
+      </div>
+    </div>
+    <div class="wx-grid">
+      <div class="wx-stat"><div class="wx-stat-label">💧 습도</div><div class="wx-stat-val">${c.relative_humidity_2m}%</div></div>
+      <div class="wx-stat"><div class="wx-stat-label">💨 풍속</div><div class="wx-stat-val">${Math.round(c.wind_speed_10m)}<span style="font-size:10px;color:#666;">km/h</span></div></div>
+      <div class="wx-stat"><div class="wx-stat-label">🌧 강수</div><div class="wx-stat-val">${c.precipitation}<span style="font-size:10px;color:#666;">mm</span></div></div>
+    </div>
+    <div class="wx-update">마지막 업데이트: ${wxData.fetched}</div>
+    <div class="info-card" style="margin-top:8px;">
+      <div class="info-card-header">📅 홍콩 5월 날씨 (통계 기준)</div>
+      <div style="font-size:11px;color:#aaa;line-height:1.8;margin-bottom:10px;">
+        평균 기온 <strong style="color:#fff;">25~29°C</strong> · 습도 <strong style="color:#fff;">85% 이상</strong><br>
+        장마 직전 — 갑작스러운 소나기 잦음<br>
+        실내 에어컨 매우 강해서 체감 온도 낮을 수 있음
+      </div>
+      <div class="chips">
+        <span class="chip ct">☂️ 접이식 우산 필수</span>
+        <span class="chip ct">🧥 얇은 카디건</span>
+        <span class="chip cy">🧴 선크림 SPF50+</span>
+        <span class="chip cy">👟 편한 운동화</span>
+        <span class="chip cr">🩴 슬리퍼 비추</span>
+      </div>
+    </div>`;
+}
+
+/* ── 앱 ── */
+function renderApps() {
+  const apps = [
+    {icon:'🗺️', name:'Google Maps', desc:'홍콩 MTR 경로 안내 완벽 지원. 오프라인 지도 미리 저장 추천', cat:'지도·내비'},
+    {icon:'🚇', name:'MTR Mobile (港鐵)', desc:'실시간 열차 시간 · 요금 계산 · 노선도 · 서비스 알림', cat:'교통'},
+    {icon:'🏰', name:'Hong Kong Disneyland', desc:'실시간 대기시간 · 쇼 스케줄 · 모바일 주문 · 식당 예약', cat:'여행'},
+    {icon:'🌐', name:'Google 번역', desc:'카메라 번역으로 메뉴판 즉시 번역. 광둥어·중국어 지원', cat:'번역'},
+    {icon:'🌦️', name:'HK Observatory (天文台)', desc:'홍콩 기상청 공식 앱. 태풍 경보 실시간 알림 — 필수 설치', cat:'날씨'},
+    {icon:'🚕', name:'HKTaxi / Uber', desc:'택시 앱 호출. HKTaxi는 홍콩 현지 앱으로 거부 없이 이용 가능', cat:'교통'},
+    {icon:'📸', name:'Snapseed', desc:'홍콩 야경 사진 보정에 최적. 무료 전문 편집 앱', cat:'사진'},
+    {icon:'💰', name:'Wise (트랜스퍼와이즈)', desc:'실시간 환율로 해외 결제. 수수료 최저 수준', cat:'금융'},
+  ];
+  const cats = [...new Set(apps.map(a=>a.cat))];
+  return cats.map(cat => `
+    <div class="sec-label">${cat}</div>
+    <div class="app-list">
+      ${apps.filter(a=>a.cat===cat).map(a=>`
+        <div class="app-item">
+          <div class="app-icon">${a.icon}</div>
+          <div><div class="app-name">${a.name}</div><div class="app-desc">${a.desc}</div></div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+/* ── 긴급 ── */
+function renderEmergency() {
+  return `
+    <div class="emg-grid">
+      <div class="emg-item">
+        <div class="emg-label">긴급신고 (경찰·소방·구급)</div>
+        <div class="emg-num">999</div>
+        <div class="emg-desc">홍콩 통합 긴급 번호</div>
+      </div>
+      <div class="emg-item">
+        <div class="emg-label">경찰 비긴급 (분실·도난)</div>
+        <div class="emg-num" style="font-size:14px;">2527-7177</div>
+        <div class="emg-desc">Police non-emergency</div>
+      </div>
+      <div class="emg-item">
+        <div class="emg-label">주홍콩 한국 총영사관</div>
+        <div class="emg-num" style="font-size:13px;">+852-2529-4141</div>
+        <div class="emg-desc">여권 분실·긴급 지원</div>
+      </div>
+      <div class="emg-item">
+        <div class="emg-label">관광객 안내 핫라인</div>
+        <div class="emg-num">1823</div>
+        <div class="emg-desc">홍콩관광청 영어 안내</div>
+      </div>
+    </div>
+    <div class="info-card" style="margin-top:8px;background:rgba(255,107,107,0.05);border-color:rgba(255,107,107,0.15);">
+      <div style="font-size:11px;color:#FF6B6B;line-height:1.75;">
+        ⚠️ 출발 전 <strong>여권 사본 + 항공권</strong> 사진 찍어두기.<br>
+        긴급 시 영사관 연락 → 임시여권 발급 가능
+      </div>
+    </div>
+    <div class="sec-label">🏥 주요 병원</div>
+    <div class="info-card">
+      <div style="font-size:11px;color:#aaa;line-height:1.9;">
+        <strong style="color:#fff;">Queen Elizabeth Hospital</strong> — 침사추이 인근 공립 종합병원<br>
+        주소: Gascoigne Road, Yau Ma Tei (응급실 24시간)<br><br>
+        <strong style="color:#fff;">Hong Kong Sanatorium & Hospital</strong> — 외국인 친화 사립병원<br>
+        주소: 2 Village Road, Happy Valley (영어 진료 가능)<br>
+        <span style="color:#4ECDC4;">💡 여행자보험 증권 사진 미리 저장 — 병원비 청구 시 필요</span>
+      </div>
+    </div>
+    <div class="sec-label">📋 분실·도난 시 대처</div>
+    <div class="info-card">
+      <div class="info-steps">
+        <div class="info-step"><div class="isn" style="background:rgba(255,107,107,0.15);border-color:rgba(255,107,107,0.35);color:#FF6B6B;">1</div><div class="isc"><strong>경찰 신고</strong>가장 가까운 경찰서 방문 또는 2527-7177 전화 → 신고서(Report) 발급</div></div>
+        <div class="info-step"><div class="isn" style="background:rgba(255,107,107,0.15);border-color:rgba(255,107,107,0.35);color:#FF6B6B;">2</div><div class="isc"><strong>여권 분실 시</strong>영사관(+852-2529-4141) 연락 → 임시여권 신청. 여권 사본·증명사진 지참</div></div>
+        <div class="info-step"><div class="isn" style="background:rgba(255,107,107,0.15);border-color:rgba(255,107,107,0.35);color:#FF6B6B;">3</div><div class="isc"><strong>카드 분실 시</strong>카드사 국제 분실신고 전화 즉시 연락 → 카드 정지 후 재발급 요청</div></div>
+        <div class="info-step"><div class="isn" style="background:rgba(255,107,107,0.15);border-color:rgba(255,107,107,0.35);color:#FF6B6B;">4</div><div class="isc"><strong>여행자보험 청구</strong>경찰 신고서 + 영수증 + 병원 진단서 보관 → 귀국 후 청구</div></div>
+      </div>
+    </div>`;
+}
+
+/* ─── 실시간: 시계 ─── */
+const dayKo = ['일','월','화','수','목','금','토'];
+function tickClock() {
+  const sel = document.getElementById('clock-sel');
+  const hk  = document.getElementById('clock-hk');
+  const dSel = document.getElementById('date-sel');
+  const dHk  = document.getElementById('date-hk');
+  if (!sel || !hk) { stopClock(); return; }
+  const now = new Date();
+  const fmt = (d) => d.toLocaleTimeString('ko-KR',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const dfmt = (d) => `${d.getMonth()+1}/${d.getDate()}(${dayKo[d.getDay()]})`;
+  const seoulTime = new Date(now.toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+  const hkTime = new Date(now.toLocaleString('en-US',{timeZone:'Asia/Hong_Kong'}));
+  sel.textContent = fmt(seoulTime);
+  hk.textContent  = fmt(hkTime);
+  dSel.textContent = dfmt(seoulTime);
+  dHk.textContent  = dfmt(hkTime);
+}
+function startClock() {
+  tickClock();
+  clockTimer = setInterval(tickClock, 1000);
+}
+function stopClock() {
+  if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
+}
+
+/* ─── 실시간: 날씨 ─── */
+function fetchWeather() {
+  const el = document.getElementById('wx-loading');
+  if (el) el.innerHTML = '<div class="wx-loading">불러오는 중... ⏳</div>';
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=22.32&longitude=114.17&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&timezone=Asia%2FHong_Kong')
+    .then(r => r.json())
+    .then(d => {
+      wxData = { current: d.current, fetched: new Date().toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul',hour12:false,hour:'2-digit',minute:'2-digit'}) };
+      if (activeInfoTab === 'weather') renderInfo();
+    })
+    .catch(() => {
+      const el2 = document.getElementById('wx-loading');
+      if (el2) el2.innerHTML = '<div class="wx-loading" style="color:#FF6B6B;">날씨 정보를 가져올 수 없습니다<br><small>인터넷 연결을 확인해주세요</small></div>';
+    });
+}
+
+/* ─── 실시간: 환율 ─── */
+function fetchRate() {
+  const el = document.getElementById('rate-loading');
+  if (el) el.innerHTML = '<div class="rate-loading">불러오는 중... ⏳</div>';
+  fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/hkd.json')
+    .then(r => r.json())
+    .then(d => {
+      rateData = { krw: d.hkd.krw, date: d.date };
+      if (activeInfoTab === 'currency') renderInfo();
+    })
+    .catch(() => {
+      const el2 = document.getElementById('rate-loading');
+      if (el2) el2.innerHTML = '<div class="rate-loading" style="color:#FF6B6B;">환율 정보를 가져올 수 없습니다<br><small>인터넷 연결을 확인해주세요</small></div>';
+    });
+}
+
+/* ─── 스위치 함수들 ─── */
+function switchDay(i) {
+  stopClock();
+  activeDay = i; activeTab = 'day'; activeView = 'schedule';
+  expandedSpot = null; expandedRest = null;
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  render();
+}
+function switchInfo() {
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  activeTab = 'info'; render();
+}
+function switchInfoTab(id) {
+  stopClock();
+  activeInfoTab = id; renderInfo();
+}
+function switchView(view) {
+  activeView = view; expandedSpot = null; expandedRest = null;
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  render();
+}
+function toggleSpot(si) {
+  expandedSpot = expandedSpot===si ? null : si;
+  expandedRest = null; render();
+}
+function toggleRest(key) {
+  expandedRest = expandedRest===key ? null : key;
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
