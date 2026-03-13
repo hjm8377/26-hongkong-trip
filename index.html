@@ -395,6 +395,13 @@ function getExpenseHkdAmount(item) {
   return Number(item.amount || 0);
 }
 
+function getExpenseKrwAmount(item) {
+  if (Number.isFinite(Number(item.krwAmount))) return Math.round(Number(item.krwAmount));
+  if (Number.isFinite(Number(item.rateUsed))) return Math.round(getExpenseHkdAmount(item) * Number(item.rateUsed));
+  if (Number.isFinite(Number(rateData && rateData.krw))) return Math.round(getExpenseHkdAmount(item) * Number(rateData.krw));
+  return 0;
+}
+
 function getTodayDateValue() {
   const now = new Date();
   const year = now.getFullYear();
@@ -535,8 +542,8 @@ function updateCurrencyInputs(source, rawValue) {
 }
 
 function handleExpenseCurrencyChange(currency) {
-  if (currency === 'KRW' && !rateData) {
-    expenseSyncStatus = 'KRW 입력용 환율을 불러오는 중...';
+  if (!rateData) {
+    expenseSyncStatus = `${currency} 입력용 환율을 불러오는 중...`;
     fetchRate();
     if (activeTab === 'expense') renderExpense();
   }
@@ -544,18 +551,13 @@ function handleExpenseCurrencyChange(currency) {
 
 async function fetchRateByDate(dateValue = 'latest') {
   if (rateCache[dateValue]) return rateCache[dateValue];
-  const primaryUrl = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${dateValue}/v1/currencies/hkd.json`;
-  const fallbackUrl = `https://${dateValue}.currency-api.pages.dev/v1/currencies/hkd.json`;
-  let response;
-  try {
-    response = await fetch(primaryUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  } catch {
-    response = await fetch(fallbackUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
+  const endpoint = dateValue === 'latest'
+    ? 'https://api.frankfurter.dev/v1/latest?base=HKD&symbols=KRW'
+    : `https://api.frankfurter.dev/v1/${dateValue}?base=HKD&symbols=KRW`;
+  const response = await fetch(endpoint);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const data = await response.json();
-  const parsed = { krw: data.hkd.krw, date: data.date };
+  const parsed = { krw: data.rates.KRW, date: data.date };
   rateCache[dateValue] = parsed;
   if (parsed.date) rateCache[parsed.date] = parsed;
   return parsed;
@@ -891,14 +893,13 @@ function renderExpense() {
   }
 
   const total = expenseEntries.reduce((sum, item) => sum + getExpenseHkdAmount(item), 0);
+  const totalKrw = expenseEntries.reduce((sum, item) => sum + getExpenseKrwAmount(item), 0);
   const byPayment = {
     cash: expenseEntries.filter(item => item.payment === 'cash').reduce((sum, item) => sum + getExpenseHkdAmount(item), 0),
     card: expenseEntries.filter(item => item.payment === 'card').reduce((sum, item) => sum + getExpenseHkdAmount(item), 0),
   };
-  const rateNum = rateData ? Number(rateData.krw) : 178;
-  const totalKrw = Math.round(total * rateNum);
-  const cardKrw = Math.round(byPayment.card * rateNum);
-  const cashKrw = Math.round(byPayment.cash * rateNum);
+  const cardKrw = expenseEntries.filter(item => item.payment === 'card').reduce((sum, item) => sum + getExpenseKrwAmount(item), 0);
+  const cashKrw = expenseEntries.filter(item => item.payment === 'cash').reduce((sum, item) => sum + getExpenseKrwAmount(item), 0);
   const defaultExpenseDate = getTodayDateValue();
 
   document.getElementById('body').innerHTML = `
@@ -955,10 +956,10 @@ function renderExpense() {
         <div class="expense-item">
           <div class="expense-item-left">
             <div class="expense-item-name">${item.title}</div>
-            <div class="expense-item-meta">${item.payment === 'cash' ? '현금' : '카드'} · 원입력 ${item.currency || 'HKD'} ${Number(item.originalAmount ?? item.amount).toLocaleString()}${item.currency === 'KRW' && item.rateDate ? ` · 환율기준 ${item.rateDate}` : ''} · ${item.memo || '메모 없음'} · ${getExpenseDateLabel(item)}</div>
+            <div class="expense-item-meta">${item.payment === 'cash' ? '현금' : '카드'} · 원입력 ${item.currency || 'HKD'} ${Number(item.originalAmount ?? item.amount).toLocaleString()}${item.rateDate ? ` · 환율기준 ${item.rateDate}` : ''} · ${item.memo || '메모 없음'} · ${getExpenseDateLabel(item)}</div>
           </div>
           <div>
-            <div class="expense-item-amount">HKD ${getExpenseHkdAmount(item).toLocaleString()}</div>
+            <div class="expense-item-amount">HKD ${getExpenseHkdAmount(item).toLocaleString()} · ₩${getExpenseKrwAmount(item).toLocaleString()}</div>
             <button class="expense-item-delete" type="button" onclick="deleteExpense(${index})">삭제</button>
           </div>
         </div>`).join('') : `<div class="empty-state">아직 저장된 지출이 없습니다. 위에서 항목을 추가해보세요.</div>`}
@@ -1481,12 +1482,17 @@ function fetchWeather() {
   const el = document.getElementById('wx-loading');
   if (el) el.innerHTML = '<div class="wx-loading">불러오는 중... ⏳</div>';
   fetch('https://api.open-meteo.com/v1/forecast?latitude=22.32&longitude=114.17&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&timezone=Asia%2FHong_Kong')
-    .then(r => r.json())
+    .then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
     .then(d => {
+      if (!d || !d.current) throw new Error('NO_CURRENT_WEATHER');
       wxData = { current: d.current, fetched: new Date().toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul',hour12:false,hour:'2-digit',minute:'2-digit'}) };
       if (activeInfoTab === 'weather') renderInfo();
     })
-    .catch(() => {
+    .catch((error) => {
+      console.error(error);
       const el2 = document.getElementById('wx-loading');
       if (el2) el2.innerHTML = '<div class="wx-loading" style="color:#FF6B6B;">날씨 정보를 가져올 수 없습니다<br><small>인터넷 연결을 확인해주세요</small></div>';
     });
