@@ -221,6 +221,8 @@
   .expense-stat-value { font-size: 15px; font-weight: 800; color: #fff; }
   .expense-stat-sub { font-size: 10px; color: #888; margin-top: 4px; }
   .expense-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .expense-date-group { margin-top: 14px; }
+  .expense-date-heading { font-size: 11px; font-weight: 800; color: #ffd166; letter-spacing: 0.04em; margin-bottom: 8px; }
   .expense-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; }
   .expense-item-left { min-width: 0; }
   .expense-item-name { font-size: 13px; font-weight: 700; color: #fff; }
@@ -901,6 +903,27 @@ function renderExpense() {
   const cardKrw = expenseEntries.filter(item => item.payment === 'card').reduce((sum, item) => sum + getExpenseKrwAmount(item), 0);
   const cashKrw = expenseEntries.filter(item => item.payment === 'cash').reduce((sum, item) => sum + getExpenseKrwAmount(item), 0);
   const defaultExpenseDate = getTodayDateValue();
+  const groupedExpenses = expenseEntries.reduce((acc, item, index) => {
+    const dateKey = getExpenseDateLabel(item);
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push({ item, index });
+    return acc;
+  }, {});
+  const groupedExpenseHtml = Object.keys(groupedExpenses).sort((a, b) => b.localeCompare(a)).map((dateKey) => `
+    <div class="expense-date-group">
+      <div class="expense-date-heading">${dateKey}</div>
+      ${groupedExpenses[dateKey].map(({ item, index }) => `
+        <div class="expense-item">
+          <div class="expense-item-left">
+            <div class="expense-item-name">${item.title}</div>
+            <div class="expense-item-meta">${item.payment === 'cash' ? '현금' : '카드'} · 원입력 ${item.currency || 'HKD'} ${Number(item.originalAmount ?? item.amount).toLocaleString()} · ${item.memo || '메모 없음'}</div>
+          </div>
+          <div>
+            <div class="expense-item-amount">HKD ${getExpenseHkdAmount(item).toLocaleString()} · ₩${getExpenseKrwAmount(item).toLocaleString()}</div>
+            <button class="expense-item-delete" type="button" onclick="deleteExpense(${index})">삭제</button>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
 
   document.getElementById('body').innerHTML = `
     <div class="info-card">
@@ -952,17 +975,7 @@ function renderExpense() {
       </form>
     </div>
     <div class="expense-list">
-      ${expenseEntries.length ? expenseEntries.map((item, index) => `
-        <div class="expense-item">
-          <div class="expense-item-left">
-            <div class="expense-item-name">${item.title}</div>
-            <div class="expense-item-meta">${item.payment === 'cash' ? '현금' : '카드'} · 원입력 ${item.currency || 'HKD'} ${Number(item.originalAmount ?? item.amount).toLocaleString()}${item.rateDate ? ` · 환율기준 ${item.rateDate}` : ''} · ${item.memo || '메모 없음'} · ${getExpenseDateLabel(item)}</div>
-          </div>
-          <div>
-            <div class="expense-item-amount">HKD ${getExpenseHkdAmount(item).toLocaleString()} · ₩${getExpenseKrwAmount(item).toLocaleString()}</div>
-            <button class="expense-item-delete" type="button" onclick="deleteExpense(${index})">삭제</button>
-          </div>
-        </div>`).join('') : `<div class="empty-state">아직 저장된 지출이 없습니다. 위에서 항목을 추가해보세요.</div>`}
+      ${expenseEntries.length ? groupedExpenseHtml : `<div class="empty-state">아직 저장된 지출이 없습니다. 위에서 항목을 추가해보세요.</div>`}
     </div>`;
 }
 
@@ -980,10 +993,6 @@ function renderAdmin() {
   document.getElementById('body').innerHTML = `
     <div class="info-card">
       <div class="info-card-header">🔐 관리자 설정</div>
-      <div class="admin-note">
-        현재 비밀번호를 확인한 뒤 새 비밀번호의 SHA-256 해시를 Firebase에 저장합니다.<br>
-        이제 HTML 안에는 평문 비밀번호를 두지 않습니다.
-      </div>
     </div>
     <div class="info-card">
       <form class="expense-form" onsubmit="changeExpensePassword(event)">
@@ -998,8 +1007,8 @@ function renderAdmin() {
     <div class="info-card">
       <div class="info-card-header">보안 안내</div>
       <div class="admin-note">
-        프런트엔드만으로는 개발자도구에서 모든 로직을 완전히 숨길 수 없습니다.<br>
-        지금은 평문 대신 해시만 저장하도록 바꿨고, 진짜 비밀값 보호는 서버나 Firebase Authentication이 있어야 가능합니다.
+        비밀번호는 Firebase에 저장된 값으로 관리됩니다.<br>
+        필요하면 여기에서 언제든 새 비밀번호로 변경할 수 있어요.
       </div>
     </div>`;
 }
