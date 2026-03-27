@@ -287,6 +287,7 @@
 </div>
 <div class="body" id="body"></div>
 
+<script src="config.js" onerror="void 0"></script>
 <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -434,7 +435,7 @@ let expenseUnlocked = localStorage.getItem(EXPENSE_AUTH_KEY) === 'true';
 /* AI 채팅 상태 */
 const AI_KEY_STORAGE = 'hk-ai-key';
 let aiMessages = [];
-let aiKey = localStorage.getItem(AI_KEY_STORAGE) || '';
+let aiKey = window.GEMINI_API_KEY || localStorage.getItem(AI_KEY_STORAGE) || '';
 let aiLoading = false;
 const AI_SYSTEM_PROMPT = `당신은 홍콩 가족여행 전용 도우미입니다. 아래 여행 정보를 바탕으로 질문에 간결하게 답하세요. 모르는 것은 솔직히 말해주세요. 한국어로 답하세요.
 
@@ -1807,21 +1808,6 @@ function switchAI() { stopClock(); activeTab = 'ai'; render(); }
 
 function renderAI() {
   const body = document.getElementById('body');
-  if (!aiKey) {
-    body.innerHTML = `
-      <div class="ai-key-card">
-        <div class="ai-key-title">🤖 AI 여행 도우미</div>
-        <div class="ai-key-sub">
-          Google Gemini API 키를 입력하세요. 무료로 사용 가능합니다.<br>
-          키 발급: <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">aistudio.google.com</a> → Get API key
-        </div>
-        <div class="ai-key-row">
-          <input class="ai-key-input" id="ai-key-input" type="password" placeholder="AIza..." autocomplete="off" />
-          <button class="ai-key-btn" onclick="saveAIKey()">저장</button>
-        </div>
-      </div>`;
-    return;
-  }
   const msgsHtml = aiMessages.length === 0
     ? `<div class="ai-bubble assistant">안녕하세요! 홍콩 여행에 대해 뭐든 물어보세요 😊<br><br>예: "3일차 일정 알려줘", "포린수도원 채식 식당 어때?", "환전 얼마나 해야 해?"</div>`
     : aiMessages.map(m => `<div class="ai-bubble ${m.role === 'user' ? 'user' : 'assistant'}">${m.role === 'user' ? escHtml(m.text) : m.text}</div>`).join('');
