@@ -1815,7 +1815,7 @@ function renderAI() {
   body.innerHTML = `
     <div class="ai-wrap">
       <div class="ai-topbar">
-        <span class="ai-model-badge">Gemini 1.5 Flash · 무료</span>
+        <span class="ai-model-badge">Gemini 2.0 Flash Lite · 무료</span>
         <button class="ai-clear-btn" onclick="aiClear()">대화 초기화</button>
       </div>
       <div class="ai-msgs" id="ai-msgs">${msgsHtml}${aiLoading ? '<div class="ai-bubble assistant thinking">답변 생성 중...</div>' : ''}</div>
@@ -1867,7 +1867,7 @@ async function aiSend() {
       parts: [{ text: m.text }]
     }));
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(aiKey)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${encodeURIComponent(aiKey)}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
