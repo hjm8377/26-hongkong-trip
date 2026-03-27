@@ -236,6 +236,33 @@
   .admin-note { font-size: 11px; color: #999; line-height: 1.7; }
   .admin-success { font-size: 11px; color: #4ECDC4; min-height: 16px; }
 
+  /* AI 채팅 */
+  .ai-wrap { display: flex; flex-direction: column; height: calc(100vh - 120px); min-height: 400px; }
+  .ai-key-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 20px; }
+  .ai-key-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .ai-key-sub { font-size: 11px; color: #666; line-height: 1.65; margin-bottom: 14px; }
+  .ai-key-sub a { color: #C77DFF; }
+  .ai-key-row { display: flex; gap: 8px; }
+  .ai-key-input { flex: 1; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; border-radius: 10px; padding: 10px 12px; font-size: 13px; font-family: inherit; }
+  .ai-key-input::placeholder { color: #555; }
+  .ai-key-btn { border: none; border-radius: 10px; padding: 10px 16px; background: linear-gradient(135deg,#C77DFF,#9B59B6); color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .ai-msgs { flex: 1; overflow-y: auto; padding: 4px 0 12px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent; }
+  .ai-msgs::-webkit-scrollbar { width: 4px; }
+  .ai-msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+  .ai-bubble { max-width: 88%; padding: 10px 13px; border-radius: 14px; font-size: 12px; line-height: 1.65; }
+  .ai-bubble.user { align-self: flex-end; background: linear-gradient(135deg,#C77DFF22,#9B59B622); border: 1px solid rgba(199,125,255,0.3); color: #e8e8e8; border-bottom-right-radius: 4px; }
+  .ai-bubble.assistant { align-self: flex-start; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #ddd; border-bottom-left-radius: 4px; }
+  .ai-bubble.thinking { color: #555; font-style: italic; }
+  .ai-input-row { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .ai-input { flex: 1; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; border-radius: 12px; padding: 11px 13px; font-size: 13px; font-family: inherit; resize: none; line-height: 1.5; max-height: 100px; }
+  .ai-input::placeholder { color: #555; }
+  .ai-send { border: none; border-radius: 12px; padding: 11px 16px; background: linear-gradient(135deg,#C77DFF,#9B59B6); color: #fff; font-size: 16px; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+  .ai-send:disabled { opacity: 0.35; cursor: default; }
+  .ai-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .ai-model-badge { font-size: 9px; background: rgba(199,125,255,0.12); border: 1px solid rgba(199,125,255,0.25); color: #C77DFF; border-radius: 6px; padding: 3px 8px; font-weight: 700; letter-spacing: 0.06em; }
+  .ai-clear-btn { border: none; background: transparent; color: #444; font-size: 10px; cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px; }
+  .ai-clear-btn:hover { background: rgba(255,255,255,0.04); color: #888; }
+
   .body { position: relative; z-index: 1; }
   @media (max-width: 520px) {
     .expense-grid { grid-template-columns: 1fr; }
@@ -403,6 +430,39 @@ let dayMapMarkers = [];
 const rateCache = {};
 let expenseEntries = loadExpenses();
 let expenseUnlocked = localStorage.getItem(EXPENSE_AUTH_KEY) === 'true';
+
+/* AI 채팅 상태 */
+const AI_KEY_STORAGE = 'hk-ai-key';
+let aiMessages = [];
+let aiKey = localStorage.getItem(AI_KEY_STORAGE) || '';
+let aiLoading = false;
+const AI_SYSTEM_PROMPT = `당신은 홍콩 가족여행 전용 도우미입니다. 아래 여행 정보를 바탕으로 질문에 간결하게 답하세요. 모르는 것은 솔직히 말해주세요. 한국어로 답하세요.
+
+여행 정보
+- 기간: 2026년 5월 1일(금) ~ 5월 5일(화)
+- 숙소: Royal Peninsula Hotel, 8 Hung Lai Rd, Hung Hom
+- 항공: CX439 인천13:40→홍콩16:30 / CX410 홍콩09:20→인천13:55
+- 통화: HKD (약 1 HKD = 170 KRW)
+- 교통: 옥토퍼스 카드, MTR, 공항버스 A22 (공항↔홍함 HKD33, 약60분)
+
+일정 요약
+DAY1(5/1 금): 공항 도착 16:30 → A22 버스 → 체크인 18:30 → 홍함 저녁(Tim Ho Wan 딤섬/완탕면) → 심포니 오브 라이츠 20:00
+DAY2(5/2 토): 홍콩 디즈니랜드 10:00~20:00 (MTR Hung Hom→Sunny Bay→Disneyland Resort)
+DAY3(5/3 일): Ngong Ping 케이블카 → 천단대불 → 포린수도원 채식 점심 → CityGate Outlets 쇼핑 → 침사추이 저녁 → TST 야경
+DAY4(5/4 월): 동생 수업 09:30-11:00 / 15:30-17:00 (숙소) / 빅토리아 피크(피크 트램) → 침사추이 쇼핑 → 템플 스트리트 야시장 19:00
+DAY5(5/5 화): 06:15 호텔 출발 → 공항 07:15 → CX410 09:20 출발
+
+주요 맛집
+- 홍함: Tim Ho Wan(딤섬/미슐랭1스타), 완탕면집, Mido Cafe(밀크티)
+- 침사추이: Lung Dim Sum, Cheung Hing Kee(미슐랭빕구르망), Hutong(야경뷰)
+- 디즈니랜드: Crystal Lotus(캐릭터딤섬/예약필수), Tahitian Terrace
+- 란타우: 포린수도원 채식식당(13시 전 방문), CityGate Food Court
+- 빅토리아 피크: The Peak Lookout, Petit Jardin
+- 센트럴: Mak's Noodles, Tsim Chai Kee, Lan Fong Yuen(밀크티 원조)
+- 템플스트리트: Wing Fat Seafood, 에그와플, 클레이팟라이스
+
+긴급연락: 경찰/앰뷸런스 999, 소방서 998, 관광경찰 2527-7177`;
+
 
 function loadExpenses() {
   try {
@@ -715,6 +775,7 @@ function render() {
   if (activeTab === 'info') { renderInfo(); return; }
   if (activeTab === 'expense') { renderExpense(); return; }
   if (activeTab === 'admin') { renderAdmin(); return; }
+  if (activeTab === 'ai') { renderAI(); return; }
   renderDay();
 }
 
@@ -741,6 +802,11 @@ function renderTabs() {
       style="${activeTab==='admin'?'color:#FF6B6B;border-bottom-color:#FF6B6B':''}" >
       <span class="tab-date" style="font-size:16px;">🔐</span>
       <span class="tab-day">관리</span>
+    </button>
+    <button class="tab ${activeTab==='ai'?'active':''}" onclick="switchAI()"
+      style="${activeTab==='ai'?'color:#C77DFF;border-bottom-color:#C77DFF':''}" >
+      <span class="tab-date" style="font-size:16px;">🤖</span>
+      <span class="tab-day">AI</span>
     </button>
   `;
 }
@@ -1734,6 +1800,119 @@ async function changeExpensePassword(event) {
     adminError = `비밀번호 저장 실패: ${error && error.message ? error.message : '알 수 없는 오류'}`;
     renderAdmin();
   }
+}
+
+/* ─── AI 채팅 ─── */
+function switchAI() { stopClock(); activeTab = 'ai'; render(); }
+
+function renderAI() {
+  const body = document.getElementById('body');
+  if (!aiKey) {
+    body.innerHTML = `
+      <div class="ai-key-card">
+        <div class="ai-key-title">🤖 AI 여행 도우미</div>
+        <div class="ai-key-sub">
+          Google Gemini API 키를 입력하세요. 무료로 사용 가능합니다.<br>
+          키 발급: <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">aistudio.google.com</a> → Get API key
+        </div>
+        <div class="ai-key-row">
+          <input class="ai-key-input" id="ai-key-input" type="password" placeholder="AIza..." autocomplete="off" />
+          <button class="ai-key-btn" onclick="saveAIKey()">저장</button>
+        </div>
+      </div>`;
+    return;
+  }
+  const msgsHtml = aiMessages.length === 0
+    ? `<div class="ai-bubble assistant">안녕하세요! 홍콩 여행에 대해 뭐든 물어보세요 😊<br><br>예: "3일차 일정 알려줘", "포린수도원 채식 식당 어때?", "환전 얼마나 해야 해?"</div>`
+    : aiMessages.map(m => `<div class="ai-bubble ${m.role === 'user' ? 'user' : 'assistant'}">${m.role === 'user' ? escHtml(m.text) : m.text}</div>`).join('');
+
+  body.innerHTML = `
+    <div class="ai-wrap">
+      <div class="ai-topbar">
+        <span class="ai-model-badge">Gemini 1.5 Flash · 무료</span>
+        <button class="ai-clear-btn" onclick="aiClear()">대화 초기화</button>
+      </div>
+      <div class="ai-msgs" id="ai-msgs">${msgsHtml}${aiLoading ? '<div class="ai-bubble assistant thinking">답변 생성 중...</div>' : ''}</div>
+      <div class="ai-input-row">
+        <textarea class="ai-input" id="ai-input" placeholder="질문을 입력하세요..." rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend();}"></textarea>
+        <button class="ai-send" id="ai-send-btn" onclick="aiSend()" ${aiLoading ? 'disabled' : ''}>↑</button>
+      </div>
+    </div>`;
+  scrollAIMsgs();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function scrollAIMsgs() {
+  const el = document.getElementById('ai-msgs');
+  if (el) el.scrollTop = el.scrollHeight;
+}
+
+function saveAIKey() {
+  const val = (document.getElementById('ai-key-input')?.value || '').trim();
+  if (!val) return;
+  aiKey = val;
+  localStorage.setItem(AI_KEY_STORAGE, aiKey);
+  renderAI();
+}
+
+function aiClear() {
+  aiMessages = [];
+  aiLoading = false;
+  renderAI();
+}
+
+async function aiSend() {
+  const input = document.getElementById('ai-input');
+  const text = (input?.value || '').trim();
+  if (!text || aiLoading) return;
+  if (input) input.value = '';
+
+  aiMessages.push({ role: 'user', text });
+  aiLoading = true;
+  renderAI();
+
+  try {
+    const contents = aiMessages.map(m => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.text }]
+    }));
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(aiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: AI_SYSTEM_PROMPT }] },
+          contents,
+          generationConfig: { maxOutputTokens: 1024, temperature: 0.7 }
+        })
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '응답을 받지 못했습니다.';
+    aiMessages.push({ role: 'model', text: formatAIReply(reply) });
+  } catch (e) {
+    aiMessages.push({ role: 'model', text: `⚠️ 오류: ${e.message}` });
+  }
+
+  aiLoading = false;
+  renderAI();
+}
+
+function formatAIReply(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/\n/g,'<br>');
 }
 
 render();
