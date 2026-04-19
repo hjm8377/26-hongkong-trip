@@ -287,7 +287,6 @@
 </div>
 <div class="body" id="body"></div>
 
-<script src="config.js" onerror="void 0"></script>
 <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -432,37 +431,12 @@ const rateCache = {};
 let expenseEntries = loadExpenses();
 let expenseUnlocked = localStorage.getItem(EXPENSE_AUTH_KEY) === 'true';
 
-/* AI 채팅 상태 */
-const AI_KEY_STORAGE = 'hk-ai-key';
+/* AI 채팅 상태 — Cloudflare Workers AI 프록시 사용 (Gemma 4 26B A4B)
+   ※ 시스템 프롬프트와 모델 호출은 Worker 측(worker.js)에 있음.
+   ※ 배포 후 발급된 Worker URL을 아래에 넣어주세요. */
+const AI_PROXY_URL = 'https://hongkong-ai.jeongminheo.workers.dev';
 let aiMessages = [];
-let aiKey = window.GEMINI_API_KEY || localStorage.getItem(AI_KEY_STORAGE) || '';
 let aiLoading = false;
-const AI_SYSTEM_PROMPT = `당신은 홍콩 가족여행 전용 도우미입니다. 아래 여행 정보를 바탕으로 질문에 간결하게 답하세요. 모르는 것은 솔직히 말해주세요. 한국어로 답하세요.
-
-여행 정보
-- 기간: 2026년 5월 1일(금) ~ 5월 5일(화)
-- 숙소: Royal Peninsula Hotel, 8 Hung Lai Rd, Hung Hom
-- 항공: CX439 인천13:40→홍콩16:30 / CX410 홍콩09:20→인천13:55
-- 통화: HKD (약 1 HKD = 170 KRW)
-- 교통: 옥토퍼스 카드, MTR, 공항버스 A22 (공항↔홍함 HKD33, 약60분)
-
-일정 요약
-DAY1(5/1 금): 공항 도착 16:30 → A22 버스 → 체크인 18:30 → 홍함 저녁(Tim Ho Wan 딤섬/완탕면) → 심포니 오브 라이츠 20:00
-DAY2(5/2 토): 홍콩 디즈니랜드 10:00~20:00 (MTR Hung Hom→Sunny Bay→Disneyland Resort)
-DAY3(5/3 일): Ngong Ping 케이블카 → 천단대불 → 포린수도원 채식 점심 → CityGate Outlets 쇼핑 → 침사추이 저녁 → TST 야경
-DAY4(5/4 월): 동생 수업 09:30-11:00 / 15:30-17:00 (숙소) / 빅토리아 피크(피크 트램) → 침사추이 쇼핑 → 템플 스트리트 야시장 19:00
-DAY5(5/5 화): 06:15 호텔 출발 → 공항 07:15 → CX410 09:20 출발
-
-주요 맛집
-- 홍함: Tim Ho Wan(딤섬/미슐랭1스타), 완탕면집, Mido Cafe(밀크티)
-- 침사추이: Lung Dim Sum, Cheung Hing Kee(미슐랭빕구르망), Hutong(야경뷰)
-- 디즈니랜드: Crystal Lotus(캐릭터딤섬/예약필수), Tahitian Terrace
-- 란타우: 포린수도원 채식식당(13시 전 방문), CityGate Food Court
-- 빅토리아 피크: The Peak Lookout, Petit Jardin
-- 센트럴: Mak's Noodles, Tsim Chai Kee, Lan Fong Yuen(밀크티 원조)
-- 템플스트리트: Wing Fat Seafood, 에그와플, 클레이팟라이스
-
-긴급연락: 경찰/앰뷸런스 999, 소방서 998, 관광경찰 2527-7177`;
 
 
 function loadExpenses() {
@@ -1815,7 +1789,7 @@ function renderAI() {
   body.innerHTML = `
     <div class="ai-wrap">
       <div class="ai-topbar">
-        <span class="ai-model-badge">Gemini 2.0 Flash Lite · 무료</span>
+        <span class="ai-model-badge">Gemma 4 · Cloudflare Workers AI</span>
         <button class="ai-clear-btn" onclick="aiClear()">대화 초기화</button>
       </div>
       <div class="ai-msgs" id="ai-msgs">${msgsHtml}${aiLoading ? '<div class="ai-bubble assistant thinking">답변 생성 중...</div>' : ''}</div>
@@ -1837,14 +1811,6 @@ function scrollAIMsgs() {
   if (el) el.scrollTop = el.scrollHeight;
 }
 
-function saveAIKey() {
-  const val = (document.getElementById('ai-key-input')?.value || '').trim();
-  if (!val) return;
-  aiKey = val;
-  localStorage.setItem(AI_KEY_STORAGE, aiKey);
-  renderAI();
-}
-
 function aiClear() {
   aiMessages = [];
   aiLoading = false;
@@ -1862,28 +1828,25 @@ async function aiSend() {
   renderAI();
 
   try {
-    const contents = aiMessages.map(m => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.text }]
+    if (!AI_PROXY_URL || AI_PROXY_URL.includes('YOUR-WORKER-NAME')) {
+      throw new Error('AI_PROXY_URL이 아직 설정되지 않았습니다. DEPLOY.md를 확인해주세요.');
+    }
+    // Worker는 OpenAI 호환 messages 형식을 받음 (role: user/assistant, content: 문자열)
+    const messages = aiMessages.map(m => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.text
     }));
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${encodeURIComponent(aiKey)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: AI_SYSTEM_PROMPT }] },
-          contents,
-          generationConfig: { maxOutputTokens: 1024, temperature: 0.7 }
-        })
-      }
-    );
+    const res = await fetch(AI_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages })
+    });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+      throw new Error(err?.error || `HTTP ${res.status}`);
     }
     const data = await res.json();
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '응답을 받지 못했습니다.';
+    const reply = data?.reply || '응답을 받지 못했습니다.';
     aiMessages.push({ role: 'model', text: formatAIReply(reply) });
   } catch (e) {
     aiMessages.push({ role: 'model', text: `⚠️ 오류: ${e.message}` });
