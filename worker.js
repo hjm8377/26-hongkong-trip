@@ -31,20 +31,18 @@ const SYSTEM_PROMPT = `당신은 홍콩 가족여행 전용 도우미입니다. 
 - 교통: 옥토퍼스 카드, MTR, 공항버스 A22 (공항↔홍함 HKD33, 약60분)
 
 일정 요약
-DAY1(5/1 금): 공항 도착 16:30 → A22 버스 → 체크인 18:30 → 홍함 저녁(Tim Ho Wan 딤섬/완탕면) → 심포니 오브 라이츠 20:00
-DAY2(5/2 토): 홍콩 디즈니랜드 10:00~20:00 (MTR Hung Hom→Sunny Bay→Disneyland Resort)
-DAY3(5/3 일): Ngong Ping 케이블카 → 천단대불 → 포린수도원 채식 점심 → CityGate Outlets 쇼핑 → 침사추이 저녁 → TST 야경
-DAY4(5/4 월): 동생 수업 09:30-11:00 / 15:30-17:00 (숙소) / 빅토리아 피크(피크 트램) → 침사추이 쇼핑 → 템플 스트리트 야시장 19:00
-DAY5(5/5 화): 06:15 호텔 출발 → 공항 07:15 → CX410 09:20 출발
+DAY1(5/1 금) 도착의 날: 16:30 홍콩 도착(CX439) → 17:30 공항버스 A22 → 18:30 호텔 체크인 → 19:30 침사추이 저녁(Cheung Hing Kee 미슐랭 빕구르망) → 21:00 1881 Heritage + 워터프론트 야경 → 22:00 호텔
+DAY2(5/2 토) 디즈니랜드: 09:00 MTR 출발 → 10:00~20:00 홍콩 디즈니랜드 → 20:30 호텔 복귀
+DAY3(5/3 일) 센트럴 미식·하버 야경: 11:00 호텔 브런치 → 13:00 Mak's Noodles 점심(센트럴) → 14:30 미드레벨 에스컬레이터·소호 → 16:30 Lan Fong Yuen 차 타임 → 17:30 Star Ferry 노을 페리 → 18:30 Avenue of Stars 야경 → 19:30 침사추이 저녁(Lung Dim Sum) → 21:00 호텔
+DAY4(5/4 월) 수업+템플 야시장: 08:30 호텔 조식 → 09:30-11:00 동생 수업(숙소) → 11:30 홍함 차찬텡 점심 → 13:00 호텔 휴식 → 15:30-17:00 동생 수업(숙소) → 18:00 야우마테이 이른 저녁(Mido Cafe) → 19:00 템플 스트리트 야시장 → 21:30 호텔
+DAY5(5/5 화) 귀국: 05:30 기상 → 06:15 호텔 출발 → 07:15 공항 → 09:20 CX410 출발 → 13:55 인천 도착(어린이날 🎉)
 
 주요 맛집
-- 홍함: Tim Ho Wan(딤섬/미슐랭1스타), 완탕면집, Mido Cafe(밀크티)
-- 침사추이: Lung Dim Sum, Cheung Hing Kee(미슐랭빕구르망), Hutong(야경뷰)
-- 디즈니랜드: Crystal Lotus(캐릭터딤섬/예약필수), Tahitian Terrace
-- 란타우: 포린수도원 채식식당(13시 전 방문), CityGate Food Court
-- 빅토리아 피크: The Peak Lookout, Petit Jardin
-- 센트럴: Mak's Noodles, Tsim Chai Kee, Lan Fong Yuen(밀크티 원조)
-- 템플스트리트: Wing Fat Seafood, 에그와플, 클레이팟라이스
+- 침사추이(5/1 저녁, 5/3 저녁): Cheung Hing Kee(미슐랭빕구르망 완탕·군만두), Lung Dim Sum(모던 딤섬), Tim Ho Wan(미슐랭1스타 딤섬), Hutong(18층 야경 북경요리)
+- 센트럴(5/3 점심·차): Mak's Noodles(1920년대 새우 완탕), Tsim Chai Kee(미슐랭 빕구르망), Kau Kee(우육면), Lan Fong Yuen(실크스타킹 밀크티 원조), Tai Cheong Bakery(에그타르트)
+- 디즈니랜드(5/2): Crystal Lotus(캐릭터 딤섬/예약필수), Tahitian Terrace(폴리네시안), Main Street Bakery(미키 와플)
+- 홍함(5/4 점심): 홍함 완탕면집, Mido Cafe(MTR 5분 야우마테이), Australia Dairy Company(스크램블에그 토스트)
+- 야우마테이·템플 스트리트(5/4 저녁): Mido Cafe, 클레이팟 라이스, Wing Fat Seafood(다이파이동), 에그와플, Lantern Seafood(흑트러플 로스트구스)
 
 긴급연락: 경찰/앰뷸런스 999, 소방서 998, 관광경찰 2527-7177`;
 
@@ -132,9 +130,22 @@ export default {
         temperature: 0.7,
       });
 
-      // Workers AI 응답 형식: { response: "..." } 또는 { result: { response: "..." } }
-      const reply = result?.response ?? result?.result?.response ?? '';
+      // Workers AI 응답 형식은 모델마다 다름. 여러 경로 시도.
+      // - 일반: { response: "..." }
+      // - 래핑: { result: { response: "..." } }
+      // - OpenAI 호환: { choices: [{ message: { content: "..." } }] }
+      // - Gemma 4: thinking 모드일 경우 output_text 또는 message.content
+      const reply =
+        result?.response ??
+        result?.result?.response ??
+        result?.choices?.[0]?.message?.content ??
+        result?.message?.content ??
+        result?.output_text ??
+        result?.output?.[0]?.content?.[0]?.text ??
+        '';
+
       if (!reply) {
+        // 디버그: 어떤 모양으로 왔는지 클라이언트에서 볼 수 있게 함
         return jsonResponse(
           { error: 'Empty response from model', raw: result },
           502,
